@@ -1,14 +1,13 @@
 async function loadData() {
-
   try {
-
     STATE.loading = true;
     STATE.error = null;
 
     render();
 
     const response = await fetch(
-      `${CONFIG.API_URL}?token=${CONFIG.TOKEN}&t=${Date.now()}`
+      `${CONFIG.API_URL}?token=${CONFIG.TOKEN}&t=${Date.now()}`,
+      { cache: 'no-store' }
     );
 
     if (!response.ok) {
@@ -24,14 +23,11 @@ async function loadData() {
     STATE.data = json.data;
 
     STATE.loading = false;
-
     render();
 
   } catch (err) {
-
     STATE.loading = false;
     STATE.error = err.message;
-
     render();
   }
 }
