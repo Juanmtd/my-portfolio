@@ -342,6 +342,7 @@ select {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
+  width: 100%;
 }
 
 .metric-card {
@@ -349,6 +350,7 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+  min-height: 130px;
 }
 
 .metric-card span {
@@ -365,11 +367,19 @@ select {
   font-size: 28px;
   line-height: 1;
   margin-bottom: 8px;
+  color: var(--text);
+}
+
+.metric-card strong.positive {
+  color: var(--green);
+}
+
+.metric-card strong.negative {
+  color: var(--red);
 }
 
 .metric-card small {
+  display: block;
   color: var(--muted);
   font-size: 12px;
-}
-
 }
