@@ -24,22 +24,82 @@ function setActiveNav(view) {
   });
 }
 
+function toNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return value;
+
+  let text = String(value)
+    .replace(/\$/g, '')
+    .replace(/€/g, '')
+    .replace(/\s/g, '')
+    .trim();
+
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(text)) {
+    text = text.replace(/\./g, '').replace(',', '.');
+  } else {
+    text = text.replace(',', '.');
+  }
+
+  return Number(text) || 0;
+}
+
 function money(value) {
-  const n = Number(value || 0);
+  const n = toNumber(value);
+
   return '$' + n.toLocaleString('es-ES', {
     maximumFractionDigits: 0
   });
 }
 
 function percent(value) {
-  const n = Number(value || 0);
+  const n = toNumber(value);
   const v = Math.abs(n) <= 3 ? n * 100 : n;
+
   return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
 }
 
+function ownerToKey(owner) {
+  return String(owner)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w]/g, '');
+}
+
 function getDashboardOwner(owner) {
-  const rows = STATE.data?.data?.dashboard_global || [];
-  return rows.find(row => row.owner === owner) || null;
+  const rows = STATE.data?.dashboard_global || [];
+  if (!rows.length) return null;
+
+  const ownerKey = ownerToKey(owner);
+
+  const firstRow = rows[0];
+  const keys = Object.keys(firstRow);
+
+  const metricKey = keys.find(k => k.startsWith('last_update')) || keys[0];
+
+  const result = {
+    owner,
+    total_value: 0,
+    buy_usd: 0,
+    sell_usd: 0,
+    current_investment: 0,
+    net_profit: 0,
+    roi_total: 0
+  };
+
+  rows.forEach(row => {
+    const metric = String(row[metricKey] || '').trim().toLowerCase();
+    const value = row[ownerKey];
+
+    if (metric === 'total value') result.total_value = value;
+    if (metric === 'buy usd') result.buy_usd = value;
+    if (metric === 'sell usd') result.sell_usd = value;
+    if (metric === 'current investment') result.current_investment = value;
+    if (metric === 'net profit') result.net_profit = value;
+    if (metric === 'roi total') result.roi_total = value;
+  });
+
+  return result;
 }
 
 function renderLoading() {
@@ -82,7 +142,7 @@ function renderDashboard() {
 
       <div class="metric-card">
         <span>Net Profit</span>
-        <strong class="${Number(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">
+        <strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">
           ${money(ownerData.net_profit)}
         </strong>
         <small>ganancia / pérdida neta</small>
@@ -90,7 +150,7 @@ function renderDashboard() {
 
       <div class="metric-card">
         <span>ROI Total</span>
-        <strong class="${Number(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">
+        <strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">
           ${percent(ownerData.roi_total)}
         </strong>
         <small>retorno total</small>
