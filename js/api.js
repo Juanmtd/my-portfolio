@@ -1,5 +1,7 @@
 async function loadData() {
+
   try {
+
     STATE.loading = true;
     STATE.error = null;
 
@@ -16,10 +18,10 @@ async function loadData() {
     const json = await response.json();
 
     if (!json.success) {
-      throw new Error(json.error || 'Unknown API error');
+      throw new Error(json.error || 'API Error');
     }
 
-    STATE.data = normalizeData(json.data);
+    STATE.data = json.data;
 
     STATE.loading = false;
 
@@ -32,32 +34,4 @@ async function loadData() {
 
     render();
   }
-}
-
-function normalizeData(data) {
-
-  return {
-    dashboard_global: normalizeSheet(data.dashboard_global || []),
-    portfolio_summary: normalizeSheet(data.portfolio_summary || []),
-    wallet_prices: normalizeSheet(data.wallet_prices || []),
-    portfolio_history: normalizeSheet(data.portfolio_history || [])
-  };
-}
-
-function normalizeSheet(rows) {
-
-  if (!rows.length) return [];
-
-  const headers = rows[0];
-
-  return rows.slice(1).map(row => {
-
-    const obj = {};
-
-    headers.forEach((header, index) => {
-      obj[header] = row[index];
-    });
-
-    return obj;
-  });
 }
