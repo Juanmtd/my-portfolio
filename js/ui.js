@@ -1,6 +1,5 @@
 function initOwnerSelect() {
   const select = document.getElementById('owner-select');
-
   select.innerHTML = '';
 
   CONFIG.OWNERS.forEach(owner => {
@@ -28,11 +27,7 @@ function toNumber(value) {
   if (value === null || value === undefined || value === '') return 0;
   if (typeof value === 'number') return value;
 
-  let text = String(value)
-    .replace(/\$/g, '')
-    .replace(/€/g, '')
-    .replace(/\s/g, '')
-    .trim();
+  let text = String(value).replace(/\$/g, '').replace(/€/g, '').replace(/\s/g, '').trim();
 
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(text)) {
     text = text.replace(/\./g, '').replace(',', '.');
@@ -45,7 +40,6 @@ function toNumber(value) {
 
 function money(value, decimals = 0) {
   const n = toNumber(value);
-
   return '$' + n.toLocaleString('es-ES', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
@@ -55,28 +49,20 @@ function money(value, decimals = 0) {
 function percent(value) {
   const n = toNumber(value);
   const v = Math.abs(n) <= 3 ? n * 100 : n;
-
   return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
 }
 
 function qty(value) {
   const n = toNumber(value);
-
   if (n === 0) return '0';
   if (n < 0.00001) return n.toFixed(10);
   if (n < 1) return n.toFixed(4);
 
-  return n.toLocaleString('es-ES', {
-    maximumFractionDigits: 4
-  });
+  return n.toLocaleString('es-ES', { maximumFractionDigits: 4 });
 }
 
 function ownerToKey(owner) {
-  return String(owner)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^\w]/g, '');
+  return String(owner).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '');
 }
 
 function getDashboardOwner(owner) {
@@ -84,10 +70,8 @@ function getDashboardOwner(owner) {
   if (!rows.length) return null;
 
   const ownerKey = ownerToKey(owner);
-
   const firstRow = rows[0];
   const keys = Object.keys(firstRow);
-
   const metricKey = keys.find(k => k.startsWith('last_update')) || keys[0];
 
   const result = {
@@ -116,11 +100,15 @@ function getDashboardOwner(owner) {
 }
 
 function getPortfolioRows(owner) {
-  const rows = STATE.data?.portfolio_summary || [];
-
-  return rows
+  return (STATE.data?.portfolio_summary || [])
     .filter(row => row.owner === owner)
     .sort((a, b) => toNumber(b.current_value) - toNumber(a.current_value));
+}
+
+function getPerformanceRows(owner) {
+  return (STATE.data?.portfolio_history || [])
+    .filter(row => row.owner === owner)
+    .sort((a, b) => new Date(a.snapshot_date) - new Date(b.snapshot_date));
 }
 
 function renderLoading() {
@@ -145,55 +133,18 @@ function renderDashboard() {
   const ownerData = getDashboardOwner(STATE.owner);
 
   if (!ownerData) {
-    app.innerHTML = `
-      <div style="color:#ff5f7a;">
-        No hay datos de dashboard_global para ${STATE.owner}
-      </div>
-    `;
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos de dashboard_global para ${STATE.owner}</div>`;
     return;
   }
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card">
-        <span>Total Value</span>
-        <strong>${money(ownerData.total_value)}</strong>
-        <small>valor actual portfolio</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Net Profit</span>
-        <strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">
-          ${money(ownerData.net_profit)}
-        </strong>
-        <small>ganancia / pérdida neta</small>
-      </div>
-
-      <div class="metric-card">
-        <span>ROI Total</span>
-        <strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">
-          ${percent(ownerData.roi_total)}
-        </strong>
-        <small>retorno total</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Buy USD</span>
-        <strong>${money(ownerData.buy_usd)}</strong>
-        <small>invertido histórico</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Sell USD</span>
-        <strong>${money(ownerData.sell_usd)}</strong>
-        <small>vendido histórico</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Current Investment</span>
-        <strong>${money(ownerData.current_investment)}</strong>
-        <small>buy - sell</small>
-      </div>
+      <div class="metric-card"><span>Total Value</span><strong>${money(ownerData.total_value)}</strong><small>valor actual portfolio</small></div>
+      <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">${money(ownerData.net_profit)}</strong><small>ganancia / pérdida neta</small></div>
+      <div class="metric-card"><span>ROI Total</span><strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(ownerData.roi_total)}</strong><small>retorno total</small></div>
+      <div class="metric-card"><span>Buy USD</span><strong>${money(ownerData.buy_usd)}</strong><small>invertido histórico</small></div>
+      <div class="metric-card"><span>Sell USD</span><strong>${money(ownerData.sell_usd)}</strong><small>vendido histórico</small></div>
+      <div class="metric-card"><span>Current Investment</span><strong>${money(ownerData.current_investment)}</strong><small>buy - sell</small></div>
     </section>
   `;
 }
@@ -203,11 +154,7 @@ function renderPortfolio() {
   const rows = getPortfolioRows(STATE.owner);
 
   if (!rows.length) {
-    app.innerHTML = `
-      <div style="color:#ff5f7a;">
-        No hay holdings para ${STATE.owner}
-      </div>
-    `;
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay holdings para ${STATE.owner}</div>`;
     return;
   }
 
@@ -233,18 +180,56 @@ function renderPortfolio() {
           <tbody>
             ${rows.map(row => `
               <tr>
-                <td>
-                  <strong>${row.symbol}</strong>
-                </td>
+                <td><strong>${row.symbol}</strong></td>
                 <td class="num">${qty(row.total_qty)}</td>
                 <td class="num">${money(row.current_price, 2)}</td>
                 <td class="num">${money(row.current_value, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
-                  ${money(row.net_profit, 2)}
-                </td>
-                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">
-                  ${percent(row.roi_total)}
-                </td>
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderPerformance() {
+  const app = document.getElementById('app');
+  const rows = getPerformanceRows(STATE.owner);
+
+  if (!rows.length) {
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
+    return;
+  }
+
+  app.innerHTML = `
+    <section class="table-card">
+      <div class="section-header">
+        <h2>Performance</h2>
+        <span>${STATE.owner}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="num">Current Value</th>
+              <th class="num">Investment</th>
+              <th class="num">Net Profit</th>
+              <th class="num">ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.slice().reverse().map(row => `
+              <tr>
+                <td>${row.snapshot_date}</td>
+                <td class="num">${money(row.current_value, 2)}</td>
+                <td class="num">${money(row.current_investment, 2)}</td>
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -287,59 +272,9 @@ function render() {
       renderPortfolio();
       break;
 
-    function getPerformanceRows(owner) {
-  return (STATE.data?.portfolio_history || [])
-    .filter(row => row.owner === owner)
-    .sort((a, b) => new Date(a.snapshot_date) - new Date(b.snapshot_date));
-}
-
-function renderPerformance() {
-  const app = document.getElementById('app');
-  const rows = getPerformanceRows(STATE.owner);
-
-  if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
-    return;
-  }
-
-  app.innerHTML = `
-    <section class="table-card">
-      <div class="section-header">
-        <h2>Performance</h2>
-        <span>${STATE.owner}</span>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th class="num">Current Value</th>
-              <th class="num">Investment</th>
-              <th class="num">Net Profit</th>
-              <th class="num">ROI</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.slice().reverse().map(row => `
-              <tr>
-                <td>${row.snapshot_date}</td>
-                <td class="num">${money(row.current_value, 2)}</td>
-                <td class="num">${money(row.current_investment, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
-                  ${money(row.net_profit, 2)}
-                </td>
-                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">
-                  ${percent(row.roi_total)}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  `;
-}
+    case 'performance':
+      renderPerformance();
+      break;
 
     case 'global':
       renderPlaceholder('Global');
