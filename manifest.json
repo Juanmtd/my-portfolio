@@ -1,1 +1,17 @@
-
+{
+  "name": "Wallet 2.0",
+  "short_name": "Wallet",
+  "description": "Portfolio Intelligence System",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#07070b",
+  "theme_color": "#7c5cfc",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
