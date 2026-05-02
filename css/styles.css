@@ -1,23 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-
   --bg: #07070b;
   --panel: #111118;
   --panel-2: #171720;
-
   --border: #262633;
-
   --text: #f5f7ff;
   --muted: #8f96b2;
-
   --accent: #7c5cfc;
-
   --green: #00d48a;
   --red: #ff5f7a;
-
   --radius: 18px;
-
 }
 
 * {
@@ -28,15 +21,10 @@
 
 html,
 body {
-
   background: var(--bg);
-
   color: var(--text);
-
   font-family: 'Inter', sans-serif;
-
   min-height: 100%;
-
 }
 
 button,
@@ -45,300 +33,141 @@ select {
 }
 
 .app {
-
   min-height: 100vh;
-
 }
 
 /* HEADER */
 
 .header {
-
   position: sticky;
-
   top: 0;
-
   z-index: 100;
-
   height: 76px;
-
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   padding: 0 20px;
-
-  background: rgba(7,7,11,.92);
-
+  background: rgba(7, 7, 11, 0.92);
   backdrop-filter: blur(14px);
-
   border-bottom: 1px solid var(--border);
-
 }
 
 .brand {
-
   display: flex;
-
   align-items: center;
-
   gap: 14px;
-
 }
 
 .brand-icon {
-
   width: 42px;
-
   height: 42px;
-
   border-radius: 14px;
-
-  background: linear-gradient(135deg,#7c5cfc,#5a38f5);
-
+  background: linear-gradient(135deg, #7c5cfc, #5a38f5);
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   font-weight: 700;
-
   font-size: 18px;
-
 }
 
 .brand-text h1 {
-
   font-size: 18px;
-
   font-weight: 700;
-
 }
 
 .brand-text span {
-
   font-size: 11px;
-
   color: var(--muted);
-
 }
 
 .header-right {
-
   display: flex;
-
   align-items: center;
-
   gap: 12px;
-
 }
 
 #last-update {
-
   font-size: 11px;
-
   color: var(--muted);
-
 }
 
 #refresh-btn {
-
   height: 40px;
-
   padding: 0 18px;
-
   border: 1px solid var(--border);
-
   background: var(--panel);
-
   color: white;
-
   border-radius: 12px;
-
   cursor: pointer;
-
-  transition: .2s;
-
+  transition: 0.2s;
 }
 
 #refresh-btn:hover {
-
   border-color: var(--accent);
-
 }
 
 /* NAV */
 
 .nav {
-
   position: sticky;
-
   top: 76px;
-
   z-index: 90;
-
   display: flex;
-
   gap: 10px;
-
   overflow-x: auto;
-
   padding: 14px 20px;
-
-  background: rgba(7,7,11,.95);
-
+  background: rgba(7, 7, 11, 0.95);
   border-bottom: 1px solid var(--border);
-
 }
 
 .nav-btn {
-
   border: none;
-
   background: var(--panel);
-
   color: var(--muted);
-
   height: 42px;
-
   padding: 0 18px;
-
   border-radius: 14px;
-
   cursor: pointer;
-
   white-space: nowrap;
-
-  transition: .2s;
-
+  transition: 0.2s;
 }
 
 .nav-btn:hover {
-
   color: white;
-
 }
 
 .nav-btn.active {
-
   background: var(--accent);
-
   color: white;
-
 }
 
 /* OWNER BAR */
 
 .owner-bar {
-
   padding: 18px 20px 0 20px;
-
 }
 
 #owner-select {
-
   width: 100%;
-
   max-width: 280px;
-
   height: 48px;
-
   background: var(--panel);
-
   border: 1px solid var(--border);
-
   border-radius: 14px;
-
   color: white;
-
   padding: 0 14px;
-
   font-size: 15px;
-
 }
 
 /* CONTENT */
 
 #app {
-
   padding: 20px;
-
 }
 
-/* LOADING */
+/* DASHBOARD */
 
-.loading-screen {
-
-  min-height: 60vh;
-
-  display: flex;
-
-  flex-direction: column;
-
-  justify-content: center;
-
-  align-items: center;
-
-  gap: 18px;
-
-}
-
-.loader {
-
-  width: 42px;
-
-  height: 42px;
-
-  border-radius: 50%;
-
-  border: 4px solid #242432;
-
-  border-top-color: var(--accent);
-
-  animation: spin .7s linear infinite;
-
-}
-
-@keyframes spin {
-
-  to {
-    transform: rotate(360deg);
-  }
-
-}
-
-/* RESPONSIVE */
-
-@media (max-width: 700px) {
-
-  .header {
-
-    padding: 0 14px;
-
-  }
-
-  .brand-text span {
-
-    display: none;
-
-  }
-
-  #last-update {
-
-    display: none;
-
-  }
-
-  #app {
-
-    padding: 14px;
-
-  }
-
-  .dashboard-grid {
+.dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
@@ -382,4 +211,54 @@ select {
   display: block;
   color: var(--muted);
   font-size: 12px;
+}
+
+/* LOADING */
+
+.loading-screen {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+}
+
+.loader {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #242432;
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 700px) {
+  .header {
+    padding: 0 14px;
+  }
+
+  .brand-text span {
+    display: none;
+  }
+
+  #last-update {
+    display: none;
+  }
+
+  #app {
+    padding: 14px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }
