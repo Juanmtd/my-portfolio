@@ -262,3 +262,60 @@ select {
     grid-template-columns: 1fr;
   }
 }
+.table-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 18px;
+}
+
+.section-header span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+th {
+  color: var(--muted);
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+td.num,
+th.num {
+  text-align: right;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
