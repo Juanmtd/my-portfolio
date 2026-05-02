@@ -287,9 +287,59 @@ function render() {
       renderPortfolio();
       break;
 
-    case 'performance':
-      renderPlaceholder('Performance');
-      break;
+    function getPerformanceRows(owner) {
+  return (STATE.data?.portfolio_history || [])
+    .filter(row => row.owner === owner)
+    .sort((a, b) => new Date(a.snapshot_date) - new Date(b.snapshot_date));
+}
+
+function renderPerformance() {
+  const app = document.getElementById('app');
+  const rows = getPerformanceRows(STATE.owner);
+
+  if (!rows.length) {
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
+    return;
+  }
+
+  app.innerHTML = `
+    <section class="table-card">
+      <div class="section-header">
+        <h2>Performance</h2>
+        <span>${STATE.owner}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="num">Current Value</th>
+              <th class="num">Investment</th>
+              <th class="num">Net Profit</th>
+              <th class="num">ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.slice().reverse().map(row => `
+              <tr>
+                <td>${row.snapshot_date}</td>
+                <td class="num">${money(row.current_value, 2)}</td>
+                <td class="num">${money(row.current_investment, 2)}</td>
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
+                  ${money(row.net_profit, 2)}
+                </td>
+                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">
+                  ${percent(row.roi_total)}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
 
     case 'global':
       renderPlaceholder('Global');
