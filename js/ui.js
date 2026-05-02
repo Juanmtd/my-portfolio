@@ -57,7 +57,6 @@ function qty(value) {
   if (n === 0) return '0';
   if (n < 0.00001) return n.toFixed(10);
   if (n < 1) return n.toFixed(4);
-
   return n.toLocaleString('es-ES', { maximumFractionDigits: 4 });
 }
 
@@ -97,6 +96,13 @@ function getDashboardOwner(owner) {
   });
 
   return result;
+}
+
+function getAllDashboardOwners() {
+  return CONFIG.OWNERS
+    .map(owner => getDashboardOwner(owner))
+    .filter(row => row && toNumber(row.total_value) > 0)
+    .sort((a, b) => toNumber(b.total_value) - toNumber(a.total_value));
 }
 
 function getPortfolioRows(owner) {
@@ -239,6 +245,83 @@ function renderPerformance() {
   `;
 }
 
+function renderGlobal() {
+  const app = document.getElementById('app');
+  const rows = getAllDashboardOwners();
+
+  if (!rows.length) {
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos globales.</div>`;
+    return;
+  }
+
+  const totalValue = rows.reduce((sum, row) => sum + toNumber(row.total_value), 0);
+  const totalProfit = rows.reduce((sum, row) => sum + toNumber(row.net_profit), 0);
+  const totalBuy = rows.reduce((sum, row) => sum + toNumber(row.buy_usd), 0);
+  const globalRoi = totalBuy > 0 ? totalProfit / totalBuy : 0;
+
+  app.innerHTML = `
+    <section class="dashboard-grid">
+      <div class="metric-card">
+        <span>Global Value</span>
+        <strong>${money(totalValue)}</strong>
+        <small>patrimonio total</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Global Net Profit</span>
+        <strong class="${totalProfit >= 0 ? 'positive' : 'negative'}">${money(totalProfit)}</strong>
+        <small>resultado consolidado</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Global ROI</span>
+        <strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">${percent(globalRoi)}</strong>
+        <small>net profit / buy usd</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Owners</span>
+        <strong>${rows.length}</strong>
+        <small>wallets activas</small>
+      </div>
+    </section>
+
+    <br>
+
+    <section class="table-card">
+      <div class="section-header">
+        <h2>Global Ranking</h2>
+        <span>All owners</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Owner</th>
+              <th class="num">Total Value</th>
+              <th class="num">Buy USD</th>
+              <th class="num">Net Profit</th>
+              <th class="num">ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td><strong>${row.owner}</strong></td>
+                <td class="num">${money(row.total_value, 2)}</td>
+                <td class="num">${money(row.buy_usd, 2)}</td>
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function renderPlaceholder(title) {
   document.getElementById('app').innerHTML = `
     <div style="color:white;font-size:18px;font-weight:600;">
@@ -277,7 +360,7 @@ function render() {
       break;
 
     case 'global':
-      renderPlaceholder('Global');
+      renderGlobal();
       break;
 
     case 'prices':
