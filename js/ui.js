@@ -43,11 +43,12 @@ function toNumber(value) {
   return Number(text) || 0;
 }
 
-function money(value) {
+function money(value, decimals = 0) {
   const n = toNumber(value);
 
   return '$' + n.toLocaleString('es-ES', {
-    maximumFractionDigits: 0
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
   });
 }
 
@@ -56,6 +57,18 @@ function percent(value) {
   const v = Math.abs(n) <= 3 ? n * 100 : n;
 
   return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+}
+
+function qty(value) {
+  const n = toNumber(value);
+
+  if (n === 0) return '0';
+  if (n < 0.00001) return n.toFixed(10);
+  if (n < 1) return n.toFixed(4);
+
+  return n.toLocaleString('es-ES', {
+    maximumFractionDigits: 4
+  });
 }
 
 function ownerToKey(owner) {
@@ -100,6 +113,14 @@ function getDashboardOwner(owner) {
   });
 
   return result;
+}
+
+function getPortfolioRows(owner) {
+  const rows = STATE.data?.portfolio_summary || [];
+
+  return rows
+    .filter(row => row.owner === owner)
+    .sort((a, b) => toNumber(b.current_value) - toNumber(a.current_value));
 }
 
 function renderLoading() {
@@ -177,6 +198,62 @@ function renderDashboard() {
   `;
 }
 
+function renderPortfolio() {
+  const app = document.getElementById('app');
+  const rows = getPortfolioRows(STATE.owner);
+
+  if (!rows.length) {
+    app.innerHTML = `
+      <div style="color:#ff5f7a;">
+        No hay holdings para ${STATE.owner}
+      </div>
+    `;
+    return;
+  }
+
+  app.innerHTML = `
+    <section class="table-card">
+      <div class="section-header">
+        <h2>Portfolio</h2>
+        <span>${STATE.owner}</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th class="num">Qty</th>
+              <th class="num">Price</th>
+              <th class="num">Value</th>
+              <th class="num">Net Profit</th>
+              <th class="num">ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td>
+                  <strong>${row.symbol}</strong>
+                </td>
+                <td class="num">${qty(row.total_qty)}</td>
+                <td class="num">${money(row.current_price, 2)}</td>
+                <td class="num">${money(row.current_value, 2)}</td>
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
+                  ${money(row.net_profit, 2)}
+                </td>
+                <td class="num ${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">
+                  ${percent(row.roi_total)}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function renderPlaceholder(title) {
   document.getElementById('app').innerHTML = `
     <div style="color:white;font-size:18px;font-weight:600;">
@@ -207,7 +284,7 @@ function render() {
       break;
 
     case 'portfolio':
-      renderPlaceholder('Portfolio');
+      renderPortfolio();
       break;
 
     case 'performance':
