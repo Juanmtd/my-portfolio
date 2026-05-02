@@ -117,6 +117,12 @@ function getPerformanceRows(owner) {
     .sort((a, b) => new Date(a.snapshot_date) - new Date(b.snapshot_date));
 }
 
+function getPriceRows() {
+  return (STATE.data?.wallet_prices || [])
+    .filter(row => row.symbol)
+    .sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)));
+}
+
 function renderLoading() {
   document.getElementById('app').innerHTML = `
     <div class="loading-screen">
@@ -261,29 +267,10 @@ function renderGlobal() {
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card">
-        <span>Global Value</span>
-        <strong>${money(totalValue)}</strong>
-        <small>patrimonio total</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Global Net Profit</span>
-        <strong class="${totalProfit >= 0 ? 'positive' : 'negative'}">${money(totalProfit)}</strong>
-        <small>resultado consolidado</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Global ROI</span>
-        <strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">${percent(globalRoi)}</strong>
-        <small>net profit / buy usd</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Owners</span>
-        <strong>${rows.length}</strong>
-        <small>wallets activas</small>
-      </div>
+      <div class="metric-card"><span>Global Value</span><strong>${money(totalValue)}</strong><small>patrimonio total</small></div>
+      <div class="metric-card"><span>Global Net Profit</span><strong class="${totalProfit >= 0 ? 'positive' : 'negative'}">${money(totalProfit)}</strong><small>resultado consolidado</small></div>
+      <div class="metric-card"><span>Global ROI</span><strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">${percent(globalRoi)}</strong><small>net profit / buy usd</small></div>
+      <div class="metric-card"><span>Owners</span><strong>${rows.length}</strong><small>wallets activas</small></div>
     </section>
 
     <br>
@@ -322,11 +309,65 @@ function renderGlobal() {
   `;
 }
 
-function renderPlaceholder(title) {
-  document.getElementById('app').innerHTML = `
-    <div style="color:white;font-size:18px;font-weight:600;">
-      ${title} coming next step
-    </div>
+function renderPrices() {
+  const app = document.getElementById('app');
+  const rows = getPriceRows();
+
+  if (!rows.length) {
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay precios disponibles.</div>`;
+    return;
+  }
+
+  const lastUpdate = rows[0]?.last_update || '—';
+
+  app.innerHTML = `
+    <section class="dashboard-grid">
+      <div class="metric-card">
+        <span>Assets</span>
+        <strong>${rows.length}</strong>
+        <small>tokens con precio</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Last Update</span>
+        <strong style="font-size:18px;">${lastUpdate}</strong>
+        <small>última actualización de precios</small>
+      </div>
+    </section>
+
+    <br>
+
+    <section class="table-card">
+      <div class="section-header">
+        <h2>Prices</h2>
+        <span>wallet_prices</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Name</th>
+              <th class="num">Price USD</th>
+              <th>Source</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td><strong>${row.symbol}</strong></td>
+                <td>${row.name || ''}</td>
+                <td class="num">${money(row.price_usd, 6)}</td>
+                <td>${row.source || ''}</td>
+                <td>${row.last_update || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
   `;
 }
 
@@ -364,7 +405,7 @@ function render() {
       break;
 
     case 'prices':
-      renderPlaceholder('Prices');
+      renderPrices();
       break;
 
     default:
