@@ -5,10 +5,14 @@ const CACHE_DURATION_MS = 60 * 1000; // 60 segundos
 
 async function loadData(forceRefresh = false) {
   try {
-    STATE.loading = true;
+    const hasExistingData = !!STATE.data;
+
     STATE.error = null;
 
-    render();
+    if (!hasExistingData) {
+      STATE.loading = true;
+      render();
+    }
 
     // =========================
     // CACHE
@@ -32,6 +36,17 @@ async function loadData(forceRefresh = false) {
       render();
 
       return;
+    }
+
+    // =========================
+    // REFRESH BUTTON STATE
+    // =========================
+
+    const refreshBtn = document.getElementById('refresh-btn');
+
+    if (refreshBtn) {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = 'Refreshing...';
     }
 
     // =========================
@@ -80,5 +95,14 @@ async function loadData(forceRefresh = false) {
     STATE.error = err.message;
 
     render();
+
+  } finally {
+
+    const refreshBtn = document.getElementById('refresh-btn');
+
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = 'Refresh';
+    }
   }
 }
