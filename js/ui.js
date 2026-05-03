@@ -144,10 +144,22 @@ function getPriceRows() {
 
 function renderLoading() {
   document.getElementById('app').innerHTML = `
-    <div class="loading-screen">
-      <div class="loader"></div>
-      <p>Loading Wallet 2.0...</p>
-    </div>
+    <section class="dashboard-grid">
+      <div class="metric-card skeleton-card"></div>
+      <div class="metric-card skeleton-card"></div>
+      <div class="metric-card skeleton-card"></div>
+      <div class="metric-card skeleton-card"></div>
+      <div class="metric-card skeleton-card"></div>
+      <div class="metric-card skeleton-card"></div>
+    </section>
+
+    <section class="table-card skeleton-table" style="margin-top:16px;">
+      <div class="skeleton-line skeleton-title"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+    </section>
   `;
 }
 
