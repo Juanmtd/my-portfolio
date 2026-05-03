@@ -230,7 +230,7 @@ function openAssetModal(row, allocation) {
   const wallets = deepData?.wallets || [];
   const transactions = deepData?.transactions || [];
 
-  const modal = document.createElement('div');
+  modal = document.createElement('div');
   modal.className = 'asset-detail-overlay';
   modal.id = 'asset-modal';
 
@@ -268,7 +268,7 @@ function openAssetModal(row, allocation) {
 
         <div class="asset-detail-item">
           <span>ROI</span>
-          ${roiBadge(row.roi_total)}
+          <strong class="${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</strong>
         </div>
 
         <div class="asset-detail-item">
