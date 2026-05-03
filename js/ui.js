@@ -64,6 +64,14 @@ function roiBadge(value) {
 function allocationBar(value) {
   const safe = Math.max(0, Math.min(100, value));
 
+  if (safe < 0.5) {
+    return `
+      <div class="allocation-wrap">
+        <span class="allocation-percent">${safe.toFixed(1)}%</span>
+      </div>
+    `;
+  }
+
   return `
     <div class="allocation-wrap">
       <span class="allocation-percent">${safe.toFixed(1)}%</span>
