@@ -413,8 +413,10 @@ tr:last-child td {
 }
 
 .asset-detail-item .roi-badge {
-  width: fit-content;
-  max-width: max-content;
+  min-width: 118px;
+  height: 38px;
+  font-size: 16px;
+  padding: 0 18px;
 }
 
 /* LOADING / SKELETON */
