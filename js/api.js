@@ -97,7 +97,6 @@ async function loadData(forceRefresh = false) {
     render();
 
   } finally {
-
     const refreshBtn = document.getElementById('refresh-btn');
 
     if (refreshBtn) {
@@ -105,4 +104,63 @@ async function loadData(forceRefresh = false) {
       refreshBtn.textContent = 'Refresh';
     }
   }
+}
+
+// =========================
+// LOCAL DATA HELPERS
+// =========================
+
+function getDataTable(tableName) {
+  return STATE.data?.[tableName] || [];
+}
+
+function getAssetTransactions(owner, symbol) {
+  return getDataTable('transactions')
+    .filter(row =>
+      row.owner === owner &&
+      row.symbol === symbol
+    )
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+function getAssetWalletRows(owner, symbol) {
+  return getDataTable('wallet_summary')
+    .filter(row =>
+      row.owner === owner &&
+      row.symbol === symbol &&
+      toNumber(row.total_qty) !== 0
+    )
+    .sort((a, b) =>
+      toNumber(b.current_value) - toNumber(a.current_value)
+    );
+}
+
+function getAssetPriceHistory(symbol) {
+  return getDataTable('price_history')
+    .filter(row => row.symbol === symbol)
+    .sort((a, b) =>
+      new Date(a.snapshot_date || a.date || a.last_update) -
+      new Date(b.snapshot_date || b.date || b.last_update)
+    );
+}
+
+function getAssetDeepData(owner, symbol) {
+  const portfolioRow = getDataTable('portfolio_summary')
+    .find(row =>
+      row.owner === owner &&
+      row.symbol === symbol
+    );
+
+  const transactions = getAssetTransactions(owner, symbol);
+  const wallets = getAssetWalletRows(owner, symbol);
+  const priceHistory = getAssetPriceHistory(symbol);
+
+  return {
+    owner,
+    symbol,
+    portfolioRow,
+    transactions,
+    wallets,
+    priceHistory
+  };
 }
