@@ -98,6 +98,12 @@ select {
   background: var(--panel);
   color: white;
   border-radius: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#refresh-btn:hover {
+  border-color: var(--accent);
 }
 
 /* NAV */
@@ -121,7 +127,9 @@ select {
   height: 42px;
   padding: 0 18px;
   border-radius: 14px;
+  cursor: pointer;
   white-space: nowrap;
+  transition: 0.2s;
 }
 
 .nav-btn.active {
@@ -173,6 +181,8 @@ select {
   display: block;
   color: var(--muted);
   font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   margin-bottom: 10px;
 }
 
@@ -180,10 +190,20 @@ select {
   display: block;
   font-size: 28px;
   margin-bottom: 8px;
+  color: var(--text);
+}
+
+.metric-card strong.positive {
+  color: var(--green);
+}
+
+.metric-card strong.negative {
+  color: var(--red);
 }
 
 .metric-card small {
   color: var(--muted);
+  font-size: 12px;
 }
 
 /* TABLES */
@@ -198,7 +218,17 @@ select {
 .section-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 18px;
+}
+
+.section-header span {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .table-wrap {
@@ -220,6 +250,8 @@ td {
 th {
   color: var(--muted);
   font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 td.num,
@@ -234,6 +266,7 @@ th.num {
   align-items: center;
   justify-content: center;
   min-width: 82px;
+  width: fit-content;
   height: 32px;
   padding: 0 12px;
   border-radius: 999px;
@@ -244,11 +277,105 @@ th.num {
 .roi-badge.positive {
   background: rgba(0,212,138,0.12);
   color: var(--green);
+  border: 1px solid rgba(0,212,138,0.2);
 }
 
 .roi-badge.negative {
   background: rgba(255,95,122,0.12);
   color: var(--red);
+  border: 1px solid rgba(255,95,122,0.2);
+}
+
+/* ASSET DETAIL MODAL */
+
+.asset-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.asset-detail-card {
+  width: 100%;
+  max-width: 680px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 28px;
+}
+
+.asset-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.asset-detail-title small {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.asset-detail-title h2 {
+  font-size: 52px;
+  margin-top: 8px;
+}
+
+.asset-close {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.asset-detail-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.asset-detail-item {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px;
+}
+
+.asset-detail-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.asset-detail-item strong {
+  font-size: 24px;
+  color: white;
+  display: inline-block;
+}
+
+.asset-detail-item strong.positive {
+  color: var(--green);
+}
+
+.asset-detail-item strong.negative {
+  color: var(--red);
+}
+
+.asset-detail-card .roi-badge {
+  width: fit-content;
+  min-width: 82px;
+  max-width: max-content;
 }
 
 /* ALLOCATION */
@@ -317,11 +444,20 @@ th.num {
 /* RESPONSIVE */
 
 @media (max-width: 700px) {
+
   #app {
     padding: 14px;
   }
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .asset-detail-title h2 {
+    font-size: 42px;
+  }
+
+  .asset-detail-card {
+    padding: 20px;
   }
 }
