@@ -213,6 +213,125 @@ select {
   font-size: 12px;
 }
 
+/* TABLES */
+
+.table-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 18px;
+}
+
+.section-header span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px;
+}
+
+th {
+  color: var(--muted);
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+td.num,
+th.num {
+  text-align: right;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* ROI BADGES */
+
+.roi-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.roi-badge.positive {
+  background: rgba(0, 212, 138, 0.12);
+  color: var(--green);
+  border: 1px solid rgba(0, 212, 138, 0.22);
+}
+
+.roi-badge.negative {
+  background: rgba(255, 95, 122, 0.12);
+  color: var(--red);
+  border: 1px solid rgba(255, 95, 122, 0.22);
+}
+
+/* ALLOCATION BARS */
+
+.allocation-cell {
+  min-width: 150px;
+}
+
+.allocation-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.allocation-percent {
+  min-width: 48px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.allocation-bar {
+  width: 90px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.allocation-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #9b86ff);
+  border-radius: 999px;
+}
+
 /* LOADING */
 
 .loading-screen {
@@ -261,88 +380,4 @@ select {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-}
-.table-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.section-header h2 {
-  font-size: 18px;
-}
-
-.section-header span {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 720px;
-}
-
-th {
-  color: var(--muted);
-  text-align: left;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-td {
-  padding: 14px 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-}
-
-td.num,
-th.num {
-  text-align: right;
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-.roi-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-width: 82px;
-  height: 32px;
-
-  padding: 0 12px;
-
-  border-radius: 999px;
-
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.roi-badge.positive {
-  background: rgba(0, 212, 138, 0.12);
-  color: var(--green);
-  border: 1px solid rgba(0, 212, 138, 0.22);
-}
-
-.roi-badge.negative {
-  background: rgba(255, 95, 122, 0.12);
-  color: var(--red);
-  border: 1px solid rgba(255, 95, 122, 0.22);
 }
