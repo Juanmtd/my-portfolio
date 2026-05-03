@@ -40,6 +40,7 @@ function toNumber(value) {
 
 function money(value, decimals = 0) {
   const n = toNumber(value);
+
   return '$' + n.toLocaleString('es-ES', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
@@ -48,15 +49,16 @@ function money(value, decimals = 0) {
 
 function percent(value) {
   const n = toNumber(value);
-  const v = Math.abs(n) <= 3 ? n * 100 : n;
-  return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+
+  return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 }
 
 function roiBadge(value) {
   const n = toNumber(value);
+
   return `
     <span class="roi-badge ${n >= 0 ? 'positive' : 'negative'}">
-      ${percent(value)}
+      ${percent(n)}
     </span>
   `;
 }
@@ -73,24 +75,35 @@ function allocationPercent(value) {
 
 function qty(value) {
   const n = toNumber(value);
+
   if (n === 0) return '0';
   if (n < 0.00001) return n.toFixed(10);
   if (n < 1) return n.toFixed(4);
-  return n.toLocaleString('es-ES', { maximumFractionDigits: 4 });
+
+  return n.toLocaleString('es-ES', {
+    maximumFractionDigits: 4
+  });
 }
 
 function ownerToKey(owner) {
-  return String(owner).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '');
+  return String(owner)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w]/g, '');
 }
 
 function getDashboardOwner(owner) {
   const rows = STATE.data?.dashboard_global || [];
+
   if (!rows.length) return null;
 
   const ownerKey = ownerToKey(owner);
   const firstRow = rows[0];
   const keys = Object.keys(firstRow);
-  const metricKey = keys.find(k => k.startsWith('last_update')) || keys[0];
+
+  const metricKey =
+    keys.find(k => k.startsWith('last_update')) || keys[0];
 
   const result = {
     owner,
@@ -103,7 +116,10 @@ function getDashboardOwner(owner) {
   };
 
   rows.forEach(row => {
-    const metric = String(row[metricKey] || '').trim().toLowerCase();
+    const metric = String(row[metricKey] || '')
+      .trim()
+      .toLowerCase();
+
     const value = row[ownerKey];
 
     if (metric === 'total value') result.total_value = value;
@@ -139,28 +155,35 @@ function getPerformanceRows(owner) {
 function getPriceRows() {
   return (STATE.data?.wallet_prices || [])
     .filter(row => row.symbol)
-    .sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)));
+    .sort((a, b) =>
+      String(a.symbol).localeCompare(String(b.symbol))
+    );
 }
 
 function openAssetModal(row, allocation) {
   closeAssetModal();
 
   const modal = document.createElement('div');
+
   modal.className = 'asset-detail-overlay';
   modal.id = 'asset-modal';
 
   modal.innerHTML = `
     <div class="asset-detail-card">
+
       <div class="asset-detail-header">
+
         <div class="asset-detail-title">
           <small>Asset Detail</small>
           <h2>${row.symbol}</h2>
         </div>
 
         <button class="asset-close" onclick="closeAssetModal()">×</button>
+
       </div>
 
       <div class="asset-detail-grid">
+
         <div class="asset-detail-item">
           <span>Qty</span>
           <strong>${qty(row.total_qty)}</strong>
@@ -178,6 +201,7 @@ function openAssetModal(row, allocation) {
 
         <div class="asset-detail-item">
           <span>Net Profit</span>
+
           <strong class="${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
             ${money(row.net_profit, 2)}
           </strong>
@@ -185,6 +209,7 @@ function openAssetModal(row, allocation) {
 
         <div class="asset-detail-item">
           <span>ROI</span>
+
           ${roiBadge(row.roi_total)}
         </div>
 
@@ -192,19 +217,24 @@ function openAssetModal(row, allocation) {
           <span>Allocation</span>
           <strong>${allocation.toFixed(1)}%</strong>
         </div>
+
       </div>
+
     </div>
   `;
 
   document.body.appendChild(modal);
 
   modal.addEventListener('click', (e) => {
-    if (e.target.id === 'asset-modal') closeAssetModal();
+    if (e.target.id === 'asset-modal') {
+      closeAssetModal();
+    }
   });
 }
 
 function closeAssetModal() {
   const modal = document.getElementById('asset-modal');
+
   if (modal) modal.remove();
 }
 
@@ -212,13 +242,17 @@ function bindAssetRows(rows, totalValue) {
   document.querySelectorAll('.clickable-row').forEach(rowEl => {
     rowEl.addEventListener('click', () => {
       const symbol = rowEl.dataset.symbol;
-      const asset = rows.find(row => row.symbol === symbol);
+
+      const asset = rows.find(
+        row => row.symbol === symbol
+      );
 
       if (!asset) return;
 
-      const allocation = totalValue > 0
-        ? (toNumber(asset.current_value) / totalValue) * 100
-        : 0;
+      const allocation =
+        totalValue > 0
+          ? (toNumber(asset.current_value) / totalValue) * 100
+          : 0;
 
       openAssetModal(asset, allocation);
     });
@@ -256,24 +290,69 @@ function renderError() {
 
 function renderDashboard() {
   const app = document.getElementById('app');
+
   const ownerData = getDashboardOwner(STATE.owner);
 
   if (!ownerData) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos de dashboard_global para ${STATE.owner}</div>`;
+    app.innerHTML = `
+      <div style="color:#ff5f7a;">
+        No hay datos de dashboard_global para ${STATE.owner}
+      </div>
+    `;
     return;
   }
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card"><span>Total Value</span><strong>${money(ownerData.total_value)}</strong><small>valor actual portfolio</small></div>
-      <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">${money(ownerData.net_profit)}</strong><small>ganancia / pérdida neta</small></div>
-      <div class="metric-card"><span>ROI Total</span><strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(ownerData.roi_total)}</strong><small>retorno total</small></div>
-      <div class="metric-card"><span>Buy USD</span><strong>${money(ownerData.buy_usd)}</strong><small>invertido histórico</small></div>
-      <div class="metric-card"><span>Sell USD</span><strong>${money(ownerData.sell_usd)}</strong><small>vendido histórico</small></div>
-      <div class="metric-card"><span>Current Investment</span><strong>${money(ownerData.current_investment)}</strong><small>buy - sell</small></div>
+
+      <div class="metric-card">
+        <span>Total Value</span>
+        <strong>${money(ownerData.total_value)}</strong>
+        <small>valor actual portfolio</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Net Profit</span>
+
+        <strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">
+          ${money(ownerData.net_profit)}
+        </strong>
+
+        <small>ganancia / pérdida neta</small>
+      </div>
+
+      <div class="metric-card">
+        <span>ROI Total</span>
+
+        <strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">
+          ${percent(ownerData.roi_total)}
+        </strong>
+
+        <small>retorno total</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Buy USD</span>
+        <strong>${money(ownerData.buy_usd)}</strong>
+        <small>invertido histórico</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Sell USD</span>
+        <strong>${money(ownerData.sell_usd)}</strong>
+        <small>vendido histórico</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Current Investment</span>
+        <strong>${money(ownerData.current_investment)}</strong>
+        <small>buy - sell</small>
+      </div>
+
     </section>
 
     <section class="table-card" style="margin-top:16px;">
+
       <div class="section-header">
         <h2>Portfolio Evolution</h2>
         <span>${STATE.owner}</span>
@@ -282,6 +361,7 @@ function renderDashboard() {
       <div style="height:320px;">
         <canvas id="portfolio-history-chart"></canvas>
       </div>
+
     </section>
   `;
 
@@ -293,24 +373,35 @@ function renderDashboard() {
 
 function renderPortfolio() {
   const app = document.getElementById('app');
+
   const rows = getPortfolioRows(STATE.owner);
 
   if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay holdings para ${STATE.owner}</div>`;
+    app.innerHTML = `
+      <div style="color:#ff5f7a;">
+        No hay holdings para ${STATE.owner}
+      </div>
+    `;
     return;
   }
 
-  const totalValue = rows.reduce((sum, row) => sum + toNumber(row.current_value), 0);
+  const totalValue = rows.reduce(
+    (sum, row) => sum + toNumber(row.current_value),
+    0
+  );
 
   app.innerHTML = `
     <section class="table-card">
+
       <div class="section-header">
         <h2>Portfolio</h2>
         <span>${STATE.owner}</span>
       </div>
 
       <div class="table-wrap">
+
         <table>
+
           <thead>
             <tr>
               <th>Asset</th>
@@ -322,27 +413,57 @@ function renderPortfolio() {
               <th class="num">Alloc</th>
             </tr>
           </thead>
+
           <tbody>
+
             ${rows.map(row => {
-              const alloc = totalValue > 0
-                ? (toNumber(row.current_value) / totalValue) * 100
-                : 0;
+
+              const alloc =
+                totalValue > 0
+                  ? (toNumber(row.current_value) / totalValue) * 100
+                  : 0;
 
               return `
                 <tr class="clickable-row" data-symbol="${row.symbol}">
-                  <td><strong>${row.symbol}</strong></td>
-                  <td class="num">${qty(row.total_qty)}</td>
-                  <td class="num">${money(row.current_price, 2)}</td>
-                  <td class="num">${money(row.current_value, 2)}</td>
-                  <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                  <td class="num">${roiBadge(row.roi_total)}</td>
-                  <td class="num allocation-cell">${allocationPercent(alloc)}</td>
+
+                  <td>
+                    <strong>${row.symbol}</strong>
+                  </td>
+
+                  <td class="num">
+                    ${qty(row.total_qty)}
+                  </td>
+
+                  <td class="num">
+                    ${money(row.current_price, 2)}
+                  </td>
+
+                  <td class="num">
+                    ${money(row.current_value, 2)}
+                  </td>
+
+                  <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
+                    ${money(row.net_profit, 2)}
+                  </td>
+
+                  <td class="num">
+                    ${roiBadge(row.roi_total)}
+                  </td>
+
+                  <td class="num allocation-cell">
+                    ${allocationPercent(alloc)}
+                  </td>
+
                 </tr>
               `;
             }).join('')}
+
           </tbody>
+
         </table>
+
       </div>
+
     </section>
   `;
 
@@ -351,22 +472,30 @@ function renderPortfolio() {
 
 function renderPerformance() {
   const app = document.getElementById('app');
+
   const rows = getPerformanceRows(STATE.owner);
 
   if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
+    app.innerHTML = `
+      <div style="color:#ff5f7a;">
+        No hay histórico para ${STATE.owner}
+      </div>
+    `;
     return;
   }
 
   app.innerHTML = `
     <section class="table-card">
+
       <div class="section-header">
         <h2>Performance</h2>
         <span>${STATE.owner}</span>
       </div>
 
       <div class="table-wrap">
+
         <table>
+
           <thead>
             <tr>
               <th>Date</th>
@@ -376,55 +505,127 @@ function renderPerformance() {
               <th class="num">ROI</th>
             </tr>
           </thead>
+
           <tbody>
+
             ${rows.slice().reverse().map(row => `
               <tr>
+
                 <td>${row.snapshot_date}</td>
-                <td class="num">${money(row.current_value, 2)}</td>
-                <td class="num">${money(row.current_investment, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                <td class="num">${roiBadge(row.roi_total)}</td>
+
+                <td class="num">
+                  ${money(row.current_value, 2)}
+                </td>
+
+                <td class="num">
+                  ${money(row.current_investment, 2)}
+                </td>
+
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
+                  ${money(row.net_profit, 2)}
+                </td>
+
+                <td class="num">
+                  ${roiBadge(row.roi_total)}
+                </td>
+
               </tr>
             `).join('')}
+
           </tbody>
+
         </table>
+
       </div>
+
     </section>
   `;
 }
 
 function renderGlobal() {
   const app = document.getElementById('app');
+
   const rows = getAllDashboardOwners();
 
   if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos globales.</div>`;
+    app.innerHTML = `
+      <div style="color:#ff5f7a;">
+        No hay datos globales.
+      </div>
+    `;
     return;
   }
 
-  const totalValue = rows.reduce((sum, row) => sum + toNumber(row.total_value), 0);
-  const totalProfit = rows.reduce((sum, row) => sum + toNumber(row.net_profit), 0);
-  const totalBuy = rows.reduce((sum, row) => sum + toNumber(row.buy_usd), 0);
-  const globalRoi = totalBuy > 0 ? totalProfit / totalBuy : 0;
+  const totalValue = rows.reduce(
+    (sum, row) => sum + toNumber(row.total_value),
+    0
+  );
+
+  const totalProfit = rows.reduce(
+    (sum, row) => sum + toNumber(row.net_profit),
+    0
+  );
+
+  const totalBuy = rows.reduce(
+    (sum, row) => sum + toNumber(row.buy_usd),
+    0
+  );
+
+  const globalRoi =
+    totalBuy > 0
+      ? (totalProfit / totalBuy) * 100
+      : 0;
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card"><span>Global Value</span><strong>${money(totalValue)}</strong><small>patrimonio total</small></div>
-      <div class="metric-card"><span>Global Net Profit</span><strong class="${totalProfit >= 0 ? 'positive' : 'negative'}">${money(totalProfit)}</strong><small>resultado consolidado</small></div>
-      <div class="metric-card"><span>Global ROI</span><strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">${percent(globalRoi)}</strong><small>net profit / buy usd</small></div>
-      <div class="metric-card"><span>Owners</span><strong>${rows.length}</strong><small>wallets activas</small></div>
+
+      <div class="metric-card">
+        <span>Global Value</span>
+        <strong>${money(totalValue)}</strong>
+        <small>patrimonio total</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Global Net Profit</span>
+
+        <strong class="${totalProfit >= 0 ? 'positive' : 'negative'}">
+          ${money(totalProfit)}
+        </strong>
+
+        <small>resultado consolidado</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Global ROI</span>
+
+        <strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">
+          ${percent(globalRoi)}
+        </strong>
+
+        <small>net profit / buy usd</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Owners</span>
+        <strong>${rows.length}</strong>
+        <small>wallets activas</small>
+      </div>
+
     </section>
 
     <br>
 
     <section class="table-card">
+
       <div class="section-header">
         <h2>Global Ranking</h2>
         <span>All owners</span>
       </div>
 
       <div class="table-wrap">
+
         <table>
+
           <thead>
             <tr>
               <th>Owner</th>
@@ -434,36 +635,65 @@ function renderGlobal() {
               <th class="num">ROI</th>
             </tr>
           </thead>
+
           <tbody>
+
             ${rows.map(row => `
               <tr>
-                <td><strong>${row.owner}</strong></td>
-                <td class="num">${money(row.total_value, 2)}</td>
-                <td class="num">${money(row.buy_usd, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                <td class="num">${roiBadge(row.roi_total)}</td>
+
+                <td>
+                  <strong>${row.owner}</strong>
+                </td>
+
+                <td class="num">
+                  ${money(row.total_value, 2)}
+                </td>
+
+                <td class="num">
+                  ${money(row.buy_usd, 2)}
+                </td>
+
+                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
+                  ${money(row.net_profit, 2)}
+                </td>
+
+                <td class="num">
+                  ${roiBadge(row.roi_total)}
+                </td>
+
               </tr>
             `).join('')}
+
           </tbody>
+
         </table>
+
       </div>
+
     </section>
   `;
 }
 
 function renderPrices() {
   const app = document.getElementById('app');
+
   const rows = getPriceRows();
 
   if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay precios disponibles.</div>`;
+    app.innerHTML = `
+      <div style="color:#ff5f7a;">
+        No hay precios disponibles.
+      </div>
+    `;
     return;
   }
 
-  const lastUpdate = rows[0]?.last_update || '—';
+  const lastUpdate =
+    rows[0]?.last_update || '—';
 
   app.innerHTML = `
     <section class="dashboard-grid">
+
       <div class="metric-card">
         <span>Assets</span>
         <strong>${rows.length}</strong>
@@ -472,21 +702,29 @@ function renderPrices() {
 
       <div class="metric-card">
         <span>Last Update</span>
-        <strong style="font-size:18px;">${lastUpdate}</strong>
+
+        <strong style="font-size:18px;">
+          ${lastUpdate}
+        </strong>
+
         <small>última actualización de precios</small>
       </div>
+
     </section>
 
     <br>
 
     <section class="table-card">
+
       <div class="section-header">
         <h2>Prices</h2>
         <span>wallet_prices</span>
       </div>
 
       <div class="table-wrap">
+
         <table>
+
           <thead>
             <tr>
               <th>Asset</th>
@@ -496,19 +734,35 @@ function renderPrices() {
               <th>Last Update</th>
             </tr>
           </thead>
+
           <tbody>
+
             ${rows.map(row => `
               <tr>
-                <td><strong>${row.symbol}</strong></td>
+
+                <td>
+                  <strong>${row.symbol}</strong>
+                </td>
+
                 <td>${row.name || ''}</td>
-                <td class="num">${money(row.price_usd, 6)}</td>
+
+                <td class="num">
+                  ${money(row.price_usd, 6)}
+                </td>
+
                 <td>${row.source || ''}</td>
+
                 <td>${row.last_update || ''}</td>
+
               </tr>
             `).join('')}
+
           </tbody>
+
         </table>
+
       </div>
+
     </section>
   `;
 }
@@ -530,6 +784,7 @@ function render() {
   }
 
   switch (STATE.view) {
+
     case 'dashboard':
       renderDashboard();
       break;
