@@ -142,6 +142,72 @@ function getPriceRows() {
     .sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)));
 }
 
+function openAssetModal(row, allocation) {
+  closeAssetModal();
+
+  const modal = document.createElement('div');
+  modal.className = 'asset-modal-backdrop';
+  modal.id = 'asset-modal';
+
+  modal.innerHTML = `
+    <div class="asset-modal">
+      <div class="asset-modal-header">
+        <div>
+          <span>Asset Detail</span>
+          <h2>${row.symbol}</h2>
+        </div>
+
+        <button class="asset-modal-close" onclick="closeAssetModal()">×</button>
+      </div>
+
+      <div class="asset-detail-grid">
+        <div class="asset-detail-card">
+          <span>Qty</span>
+          <strong>${qty(row.total_qty)}</strong>
+        </div>
+
+        <div class="asset-detail-card">
+          <span>Price</span>
+          <strong>${money(row.current_price, 2)}</strong>
+        </div>
+
+        <div class="asset-detail-card">
+          <span>Value</span>
+          <strong>${money(row.current_value, 2)}</strong>
+        </div>
+
+        <div class="asset-detail-card">
+          <span>Net Profit</span>
+          <strong class="${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
+            ${money(row.net_profit, 2)}
+          </strong>
+        </div>
+
+        <div class="asset-detail-card">
+          <span>ROI</span>
+          <strong>${roiBadge(row.roi_total)}</strong>
+        </div>
+
+        <div class="asset-detail-card">
+          <span>Allocation</span>
+          <strong>${allocation.toFixed(1)}%</strong>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target.id === 'asset-modal') closeAssetModal();
+  });
+}
+
+function closeAssetModal() {
+  const modal = document.getElementById('asset-modal');
+  if (modal) modal.remove();
+}
+
 function renderLoading() {
   document.getElementById('app').innerHTML = `
     <section class="dashboard-grid">
@@ -245,8 +311,10 @@ function renderPortfolio() {
                 ? (toNumber(row.current_value) / totalValue) * 100
                 : 0;
 
+              const encoded = encodeURIComponent(JSON.stringify(row));
+
               return `
-                <tr>
+                <tr class="clickable-row" onclick="openAssetModal(JSON.parse(decodeURIComponent('${encoded}')), ${alloc})">
                   <td><strong>${row.symbol}</strong></td>
                   <td class="num">${qty(row.total_qty)}</td>
                   <td class="num">${money(row.current_price, 2)}</td>
