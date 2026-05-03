@@ -317,7 +317,7 @@ tr:last-child td {
   font-weight: 600;
 }
 
-/* LOADING */
+/* LOADING / SKELETON */
 
 .loading-screen {
   min-height: 60vh;
@@ -337,9 +337,49 @@ tr:last-child td {
   animation: spin 0.7s linear infinite;
 }
 
+.skeleton-card,
+.skeleton-line {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.skeleton-title {
+  width: 180px;
+  height: 22px;
+  margin-bottom: 22px;
+}
+
+.skeleton-table {
+  min-height: 220px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
   }
 }
 
