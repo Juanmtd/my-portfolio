@@ -61,7 +61,7 @@ function roiBadge(value) {
   `;
 }
 
-function allocationBar(value) {
+function allocationPercent(value) {
   const safe = Math.max(0, Math.min(100, value));
 
   return `
@@ -177,7 +177,23 @@ function renderDashboard() {
       <div class="metric-card"><span>Sell USD</span><strong>${money(ownerData.sell_usd)}</strong><small>vendido histórico</small></div>
       <div class="metric-card"><span>Current Investment</span><strong>${money(ownerData.current_investment)}</strong><small>buy - sell</small></div>
     </section>
+
+    <section class="table-card" style="margin-top:16px;">
+      <div class="section-header">
+        <h2>Portfolio Evolution</h2>
+        <span>${STATE.owner}</span>
+      </div>
+
+      <div style="height:320px;">
+        <canvas id="portfolio-history-chart"></canvas>
+      </div>
+    </section>
   `;
+
+  renderPortfolioHistoryChart(
+    'portfolio-history-chart',
+    getPerformanceRows(STATE.owner)
+  );
 }
 
 function renderPortfolio() {
@@ -225,7 +241,7 @@ function renderPortfolio() {
                   <td class="num">${money(row.current_value, 2)}</td>
                   <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
                   <td class="num">${roiBadge(row.roi_total)}</td>
-                  <td class="num allocation-cell">${allocationBar(alloc)}</td>
+                  <td class="num allocation-cell">${allocationPercent(alloc)}</td>
                 </tr>
               `;
             }).join('')}
