@@ -420,18 +420,6 @@ tr:last-child td {
   color: var(--text);
 }
 
-/* ROI dentro del modal */
-
-.asset-detail-item .roi-badge {
-  min-width: 170px;
-  height: 48px;
-  padding: 0 24px;
-  font-size: 20px;
-  font-weight: 800;
-  justify-content: center;
-  margin-top: 2px;
-}
-
 /* ASSET EXTRA */
 
 .asset-extra-section {
@@ -614,12 +602,5 @@ tr:last-child td {
 
   .asset-detail-title h2 {
     font-size: 38px;
-  }
-
-  .asset-detail-item .roi-badge {
-    width: 100%;
-    min-width: 100%;
-    height: 50px;
-    font-size: 22px;
   }
 }
