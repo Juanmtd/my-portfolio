@@ -23,7 +23,7 @@ function bindNavigation() {
 
 function bindRefresh() {
   document.getElementById('refresh-btn').addEventListener('click', async () => {
-    await loadData();
+    await loadData(true);
     updateLastRefresh();
   });
 }
