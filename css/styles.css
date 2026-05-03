@@ -420,6 +420,14 @@ tr:last-child td {
   color: var(--text);
 }
 
+.asset-detail-item strong.positive {
+  color: var(--green);
+}
+
+.asset-detail-item strong.negative {
+  color: var(--red);
+}
+
 /* ASSET EXTRA */
 
 .asset-extra-section {
