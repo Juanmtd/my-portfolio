@@ -325,3 +325,16 @@ th.num {
     grid-template-columns: 1fr;
   }
 }
+.asset-detail-card .roi-badge {
+  width: fit-content;
+  min-width: 82px;
+  max-width: max-content;
+}
+
+.asset-detail-card strong {
+  display: inline-block;
+}
+
+.asset-detail-card strong .roi-badge {
+  display: inline-flex;
+}
