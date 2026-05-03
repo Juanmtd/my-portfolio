@@ -267,7 +267,8 @@ td {
 }
 
 td.num,
-th.num {
+th.num,
+.num {
   text-align: right;
 }
 
@@ -340,16 +341,23 @@ tr:last-child td {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .asset-detail-card {
   width: 100%;
   max-width: 620px;
+  max-height: 92vh;
+  overflow-y: auto;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 26px;
   padding: 24px;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+}
+
+.asset-detail-card-wide {
+  max-width: 760px;
 }
 
 .asset-detail-header {
@@ -419,6 +427,82 @@ tr:last-child td {
   font-size: 18px;
   font-weight: 700;
   justify-content: center;
+}
+
+/* ASSET EXTRA */
+
+.asset-extra-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.asset-extra-card {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.asset-extra-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.asset-extra-header h3 {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.asset-extra-header span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.asset-mini-table {
+  display: grid;
+  gap: 10px;
+}
+
+.asset-mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.asset-mini-row:last-child {
+  border-bottom: none;
+}
+
+.asset-mini-row strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.asset-mini-row span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.asset-mini-row .num {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.asset-empty {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 10px 0;
 }
 
 /* LOADING / SKELETON */
@@ -511,6 +595,10 @@ tr:last-child td {
   }
 
   .asset-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .asset-extra-section {
     grid-template-columns: 1fr;
   }
 
