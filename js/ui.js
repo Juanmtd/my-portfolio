@@ -86,6 +86,18 @@ function qty(value) {
   });
 }
 
+function cleanDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value || '—';
+
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
+  });
+}
+
 function ownerToKey(owner) {
   return String(owner)
     .trim()
@@ -369,11 +381,50 @@ function renderPerformance() {
     return;
   }
 
+  const latest = rows[rows.length - 1];
+
   app.innerHTML = `
-    <section class="table-card">
+    <section class="dashboard-grid">
+      <div class="metric-card">
+        <span>Current Value</span>
+        <strong>${money(latest.current_value)}</strong>
+        <small>último snapshot</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Investment</span>
+        <strong>${money(latest.current_investment)}</strong>
+        <small>inversión actual</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Net Profit</span>
+        <strong class="${toNumber(latest.net_profit) >= 0 ? 'positive' : 'negative'}">${money(latest.net_profit)}</strong>
+        <small>resultado actual</small>
+      </div>
+
+      <div class="metric-card">
+        <span>ROI</span>
+        <strong class="${toNumber(latest.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(latest.roi_total)}</strong>
+        <small>retorno actual</small>
+      </div>
+    </section>
+
+    <section class="table-card" style="margin-top:16px;">
       <div class="section-header">
-        <h2>Performance</h2>
+        <h2>Performance Evolution</h2>
         <span>${STATE.owner}</span>
+      </div>
+
+      <div style="height:320px;">
+        <canvas id="performance-history-chart"></canvas>
+      </div>
+    </section>
+
+    <section class="table-card" style="margin-top:16px;">
+      <div class="section-header">
+        <h2>Performance History</h2>
+        <span>${rows.length} snapshots</span>
       </div>
 
       <div class="table-wrap">
@@ -391,7 +442,7 @@ function renderPerformance() {
           <tbody>
             ${rows.slice().reverse().map(row => `
               <tr>
-                <td>${row.snapshot_date}</td>
+                <td>${cleanDate(row.snapshot_date)}</td>
                 <td class="num">${money(row.current_value, 2)}</td>
                 <td class="num">${money(row.current_investment, 2)}</td>
                 <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
@@ -403,6 +454,11 @@ function renderPerformance() {
       </div>
     </section>
   `;
+
+  renderPortfolioHistoryChart(
+    'performance-history-chart',
+    rows
+  );
 }
 
 function renderGlobal() {
