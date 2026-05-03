@@ -46,3 +46,5 @@ function updateLastRefresh() {
 }
 
 document.addEventListener('DOMContentLoaded', boot);
+
+window.STATE = STATE;
