@@ -299,39 +299,22 @@ tr:last-child td {
   border: 1px solid rgba(255, 95, 122, 0.22);
 }
 
-/* ALLOCATION BARS */
+/* ALLOCATION */
 
 .allocation-cell {
-  min-width: 150px;
+  min-width: 90px;
 }
 
 .allocation-wrap {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
 }
 
 .allocation-percent {
-  min-width: 48px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
-}
-
-.allocation-bar {
-  width: 95px;
-  height: 5px;
-  background: rgba(124, 92, 252, 0.12);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.allocation-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 999px;
-  box-shadow: 0 0 10px rgba(124, 92, 252, 0.55);
 }
 
 /* LOADING */
