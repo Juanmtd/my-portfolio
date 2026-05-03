@@ -61,6 +61,19 @@ function roiBadge(value) {
   `;
 }
 
+function allocationBar(value) {
+  const safe = Math.max(0, Math.min(100, value));
+
+  return `
+    <div class="allocation-wrap">
+      <span class="allocation-percent">${safe.toFixed(1)}%</span>
+      <span class="allocation-bar">
+        <span class="allocation-fill" style="width:${safe}%"></span>
+      </span>
+    </div>
+  `;
+}
+
 function qty(value) {
   const n = toNumber(value);
   if (n === 0) return '0';
@@ -179,6 +192,8 @@ function renderPortfolio() {
     return;
   }
 
+  const totalValue = rows.reduce((sum, row) => sum + toNumber(row.current_value), 0);
+
   app.innerHTML = `
     <section class="table-card">
       <div class="section-header">
@@ -196,19 +211,27 @@ function renderPortfolio() {
               <th class="num">Value</th>
               <th class="num">Net Profit</th>
               <th class="num">ROI</th>
+              <th class="num">Alloc</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.map(row => `
-              <tr>
-                <td><strong>${row.symbol}</strong></td>
-                <td class="num">${qty(row.total_qty)}</td>
-                <td class="num">${money(row.current_price, 2)}</td>
-                <td class="num">${money(row.current_value, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                <td class="num">${roiBadge(row.roi_total)}</td>
-              </tr>
-            `).join('')}
+            ${rows.map(row => {
+              const alloc = totalValue > 0
+                ? (toNumber(row.current_value) / totalValue) * 100
+                : 0;
+
+              return `
+                <tr>
+                  <td><strong>${row.symbol}</strong></td>
+                  <td class="num">${qty(row.total_qty)}</td>
+                  <td class="num">${money(row.current_price, 2)}</td>
+                  <td class="num">${money(row.current_value, 2)}</td>
+                  <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+                  <td class="num">${roiBadge(row.roi_total)}</td>
+                  <td class="num allocation-cell">${allocationBar(alloc)}</td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
