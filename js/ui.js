@@ -166,15 +166,76 @@ function getPriceRows() {
     .sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)));
 }
 
+function renderAssetWallets(wallets) {
+  if (!wallets || !wallets.length) {
+    return `
+      <div class="asset-empty">
+        No wallet breakdown available.
+      </div>
+    `;
+  }
+
+  return `
+    <div class="asset-mini-table">
+      ${wallets.slice(0, 6).map(row => `
+        <div class="asset-mini-row">
+          <div>
+            <strong>${row.wallet || 'Wallet'}</strong>
+            <span>${qty(row.total_qty)} ${row.symbol || ''}</span>
+          </div>
+
+          <div class="num">
+            ${money(row.current_value, 2)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderAssetTransactions(transactions) {
+  if (!transactions || !transactions.length) {
+    return `
+      <div class="asset-empty">
+        No transactions available.
+      </div>
+    `;
+  }
+
+  return `
+    <div class="asset-mini-table">
+      ${transactions.slice(0, 6).map(row => `
+        <div class="asset-mini-row">
+          <div>
+            <strong>${row.type || 'TX'}</strong>
+            <span>${cleanDate(row.date)} · ${row.wallet || ''}</span>
+          </div>
+
+          <div class="num">
+            ${qty(row.qty)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 function openAssetModal(row, allocation) {
   closeAssetModal();
+
+  const deepData = getAssetDeepData
+    ? getAssetDeepData(STATE.owner, row.symbol)
+    : null;
+
+  const wallets = deepData?.wallets || [];
+  const transactions = deepData?.transactions || [];
 
   const modal = document.createElement('div');
   modal.className = 'asset-detail-overlay';
   modal.id = 'asset-modal';
 
   modal.innerHTML = `
-    <div class="asset-detail-card">
+    <div class="asset-detail-card asset-detail-card-wide">
       <div class="asset-detail-header">
         <div class="asset-detail-title">
           <small>Asset Detail</small>
@@ -213,6 +274,26 @@ function openAssetModal(row, allocation) {
         <div class="asset-detail-item">
           <span>Allocation</span>
           <strong>${allocation.toFixed(1)}%</strong>
+        </div>
+      </div>
+
+      <div class="asset-extra-section">
+        <div class="asset-extra-card">
+          <div class="asset-extra-header">
+            <h3>Wallets</h3>
+            <span>${wallets.length}</span>
+          </div>
+
+          ${renderAssetWallets(wallets)}
+        </div>
+
+        <div class="asset-extra-card">
+          <div class="asset-extra-header">
+            <h3>Last Transactions</h3>
+            <span>${transactions.length}</span>
+          </div>
+
+          ${renderAssetTransactions(transactions)}
         </div>
       </div>
     </div>
