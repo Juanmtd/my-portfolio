@@ -146,49 +146,49 @@ function openAssetModal(row, allocation) {
   closeAssetModal();
 
   const modal = document.createElement('div');
-  modal.className = 'asset-modal-backdrop';
+  modal.className = 'asset-detail-overlay';
   modal.id = 'asset-modal';
 
   modal.innerHTML = `
-    <div class="asset-modal">
-      <div class="asset-modal-header">
-        <div>
-          <span>Asset Detail</span>
+    <div class="asset-detail-card">
+      <div class="asset-detail-header">
+        <div class="asset-detail-title">
+          <small>Asset Detail</small>
           <h2>${row.symbol}</h2>
         </div>
 
-        <button class="asset-modal-close" onclick="closeAssetModal()">×</button>
+        <button class="asset-close" onclick="closeAssetModal()">×</button>
       </div>
 
       <div class="asset-detail-grid">
-        <div class="asset-detail-card">
+        <div class="asset-detail-item">
           <span>Qty</span>
           <strong>${qty(row.total_qty)}</strong>
         </div>
 
-        <div class="asset-detail-card">
+        <div class="asset-detail-item">
           <span>Price</span>
           <strong>${money(row.current_price, 2)}</strong>
         </div>
 
-        <div class="asset-detail-card">
+        <div class="asset-detail-item">
           <span>Value</span>
           <strong>${money(row.current_value, 2)}</strong>
         </div>
 
-        <div class="asset-detail-card">
+        <div class="asset-detail-item">
           <span>Net Profit</span>
           <strong class="${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">
             ${money(row.net_profit, 2)}
           </strong>
         </div>
 
-        <div class="asset-detail-card">
+        <div class="asset-detail-item">
           <span>ROI</span>
-          <strong>${roiBadge(row.roi_total)}</strong>
+          ${roiBadge(row.roi_total)}
         </div>
 
-        <div class="asset-detail-card">
+        <div class="asset-detail-item">
           <span>Allocation</span>
           <strong>${allocation.toFixed(1)}%</strong>
         </div>
@@ -206,6 +206,23 @@ function openAssetModal(row, allocation) {
 function closeAssetModal() {
   const modal = document.getElementById('asset-modal');
   if (modal) modal.remove();
+}
+
+function bindAssetRows(rows, totalValue) {
+  document.querySelectorAll('.clickable-row').forEach(rowEl => {
+    rowEl.addEventListener('click', () => {
+      const symbol = rowEl.dataset.symbol;
+      const asset = rows.find(row => row.symbol === symbol);
+
+      if (!asset) return;
+
+      const allocation = totalValue > 0
+        ? (toNumber(asset.current_value) / totalValue) * 100
+        : 0;
+
+      openAssetModal(asset, allocation);
+    });
+  });
 }
 
 function renderLoading() {
@@ -311,10 +328,8 @@ function renderPortfolio() {
                 ? (toNumber(row.current_value) / totalValue) * 100
                 : 0;
 
-              const encoded = encodeURIComponent(JSON.stringify(row));
-
               return `
-                <tr class="clickable-row" onclick="openAssetModal(JSON.parse(decodeURIComponent('${encoded}')), ${alloc})">
+                <tr class="clickable-row" data-symbol="${row.symbol}">
                   <td><strong>${row.symbol}</strong></td>
                   <td class="num">${qty(row.total_qty)}</td>
                   <td class="num">${money(row.current_price, 2)}</td>
@@ -330,6 +345,8 @@ function renderPortfolio() {
       </div>
     </section>
   `;
+
+  bindAssetRows(rows, totalValue);
 }
 
 function renderPerformance() {
