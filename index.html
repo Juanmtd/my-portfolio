@@ -15,96 +15,111 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Wallet 2.0" />
 
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=20260503-2" />
+  <link rel="stylesheet" href="css/styles.css?v=20260601-1" />
 </head>
 
 <body>
 
-  <div class="app">
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen">
+
+    <div class="login-brand">
+      <div class="brand-icon">W</div>
+      <div class="login-brand-text">
+        <h1>Wallet 2.0</h1>
+        <span>Portfolio Intelligence System</span>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <p class="login-card-title">Accede a tu cartera</p>
+      <p class="login-card-desc">
+        Inicia sesión con tu cuenta de Google para ver tus inversiones.
+      </p>
+
+      <!-- Botón Google Identity Services -->
+      <div id="g_id_onload"
+        data-client_id="442964568100-nc4i6rn97kprssbb9d737spi3fucs9ae.apps.googleusercontent.com"
+        data-callback="handleGoogleLogin"
+        data-auto_prompt="false">
+      </div>
+
+      <div class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="filled_black"
+        data-text="signin_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+        data-width="280">
+      </div>
+
+      <p id="login-error" class="login-error" style="display:none;"></p>
+
+      <p class="login-footer">
+        Solo lectura · Tus datos no se modifican nunca
+      </p>
+    </div>
+
+  </div>
+
+  <!-- APP SHELL (oculto hasta login) -->
+  <div class="app app-shell" style="display:none;">
 
     <header class="header">
 
       <div class="brand">
-
-        <div class="brand-icon">
-          W
-        </div>
-
+        <div class="brand-icon">W</div>
         <div class="brand-text">
           <h1>Wallet 2.0</h1>
           <span>Portfolio Intelligence System</span>
         </div>
-
       </div>
 
       <div class="header-right">
-
-        <span id="last-update">
-          syncing...
-        </span>
-
-        <button id="refresh-btn">
-          Refresh
-        </button>
-
+        <span id="last-update">syncing...</span>
+        <div id="user-avatar-wrap" class="user-avatar-wrap">
+          <img id="user-avatar" class="user-avatar" src="" alt="" style="display:none;" />
+        </div>
+        <button id="logout-btn" onclick="logout()">Salir</button>
+        <button id="refresh-btn">Refresh</button>
       </div>
 
     </header>
 
     <nav class="nav">
-
-      <button class="nav-btn active" data-view="dashboard">
-        Dashboard
-      </button>
-
-      <button class="nav-btn" data-view="portfolio">
-        Portfolio
-      </button>
-
-      <button class="nav-btn" data-view="performance">
-        Performance
-      </button>
-
-      <button class="nav-btn" data-view="global">
-        Global
-      </button>
-
-      <button class="nav-btn" data-view="prices">
-        Prices
-      </button>
-
+      <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+      <button class="nav-btn" data-view="portfolio">Portfolio</button>
+      <button class="nav-btn" data-view="performance">Performance</button>
+      <button class="nav-btn" data-view="global">Global</button>
+      <button class="nav-btn" data-view="prices">Prices</button>
     </nav>
 
-    <section class="owner-bar">
-
+    <section class="owner-bar" style="display:none;">
       <select id="owner-select"></select>
-
     </section>
 
     <main id="app">
-
       <div class="loading-screen">
-
         <div class="loader"></div>
-
-        <p>
-          Connecting Wallet 2.0...
-        </p>
-
+        <p>Connecting Wallet 2.0...</p>
       </div>
-
     </main>
 
   </div>
 
-  <script src="js/config.js?v=20260503-2"></script>
-  <script src="js/state.js?v=20260503-2"></script>
-  <script src="js/api.js?v=20260503-2"></script>
-  <script src="js/charts.js?v=20260503-2"></script>
-  <script src="js/ui.js?v=20260503-2"></script>
-  <script src="js/app.js?v=20260503-2"></script>
+  <script src="js/config.js?v=20260601-1"></script>
+  <script src="js/state.js?v=20260601-1"></script>
+  <script src="js/api.js?v=20260601-1"></script>
+  <script src="js/charts.js?v=20260601-1"></script>
+  <script src="js/ui.js?v=20260601-1"></script>
+  <script src="js/app.js?v=20260601-1"></script>
 
 </body>
 
