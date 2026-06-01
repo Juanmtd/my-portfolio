@@ -14,10 +14,6 @@ async function loadData(forceRefresh = false) {
       render();
     }
 
-    // =========================
-    // CACHE
-    // =========================
-
     const cachedData = localStorage.getItem(CACHE_KEY);
     const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
 
@@ -28,77 +24,44 @@ async function loadData(forceRefresh = false) {
 
     if (!forceRefresh && cacheStillValid) {
       STATE.data = JSON.parse(cachedData);
-
       STATE.loading = false;
-
       console.log('Loaded from cache');
-
       render();
-
       return;
     }
 
-    // =========================
-    // REFRESH BUTTON STATE
-    // =========================
-
     const refreshBtn = document.getElementById('refresh-btn');
-
     if (refreshBtn) {
       refreshBtn.disabled = true;
       refreshBtn.textContent = 'Refreshing...';
     }
-
-    // =========================
-    // API FETCH
-    // =========================
 
     const response = await fetch(
       `${CONFIG.API_URL}?token=${CONFIG.TOKEN}&t=${Date.now()}`,
       { cache: 'no-store' }
     );
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const json = await response.json();
+    if (!json.success) throw new Error(json.error || 'API Error');
 
-    if (!json.success) {
-      throw new Error(json.error || 'API Error');
-    }
-
-    // =========================
-    // SAVE CACHE
-    // =========================
-
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify(json.data)
-    );
-
-    localStorage.setItem(
-      CACHE_TIME_KEY,
-      Date.now().toString()
-    );
+    localStorage.setItem(CACHE_KEY, JSON.stringify(json.data));
+    localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
 
     STATE.data = json.data;
-
     STATE.loading = false;
 
     console.log('Loaded from API');
-
     render();
 
   } catch (err) {
     STATE.loading = false;
     STATE.error = err.message;
-
     render();
 
   } finally {
     const refreshBtn = document.getElementById('refresh-btn');
-
     if (refreshBtn) {
       refreshBtn.disabled = false;
       refreshBtn.textContent = 'Refresh';
@@ -116,33 +79,33 @@ function getDataTable(tableName) {
 
 function getAssetTransactions(owner, symbol) {
   return getDataTable('transactions')
-    .filter(row =>
-      row.owner === owner &&
-      row.symbol === symbol
-    )
+    .filter(row => row.owner === owner && row.symbol === symbol)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 function getAssetWalletRows(owner, symbol) {
-  // Leer desde wallet_xxx (pestaña individual del owner)
-  const key = 'wallet_' + ownerToKey(owner);
-  const rows = getDataTable(key);
+  // Leer desde wallet_summary: una fila por owner+wallet+symbol
+  const rows = getDataTable('wallet_summary')
+    .filter(row =>
+      row.owner === owner &&
+      row.symbol === symbol &&
+      toNumber(row.qty) !== 0
+    )
+    .sort((a, b) => toNumber(b.current_value) - toNumber(a.current_value));
 
-  const row = rows.find(r => String(r.symbol || '').trim().toUpperCase() === String(symbol).trim().toUpperCase());
+  // Enriquecer con wallet_type desde wallet_registry
+  const registry = getDataTable('wallet_registry');
 
-  if (!row || !row.wallets) return [];
-
-  // wallets y wallet_types son strings separados por coma
-  const walletNames = String(row.wallets).split(',').map(s => s.trim()).filter(Boolean);
-  const walletTypes = String(row.wallet_types || '').split(',').map(s => s.trim());
-
-  return walletNames.map((name, i) => ({
-    wallet: name,
-    type: walletTypes[i] || '',
-    symbol: symbol,
-    total_qty: row.total_qty,
-    current_value: row.current_value
-  }));
+  return rows.map(row => {
+    const reg = registry.find(r =>
+      r.wallet_name === row.wallet && r.owner === owner
+    );
+    return {
+      ...row,
+      wallet_type: reg ? reg.wallet_type : '',
+      platform: reg ? reg.platform : ''
+    };
+  });
 }
 
 function getAssetPriceHistory(symbol) {
@@ -156,21 +119,46 @@ function getAssetPriceHistory(symbol) {
 
 function getAssetDeepData(owner, symbol) {
   const portfolioRow = getDataTable('portfolio_summary')
-    .find(row =>
-      row.owner === owner &&
-      row.symbol === symbol
-    );
+    .find(row => row.owner === owner && row.symbol === symbol);
 
   const transactions = getAssetTransactions(owner, symbol);
   const wallets = getAssetWalletRows(owner, symbol);
   const priceHistory = getAssetPriceHistory(symbol);
 
-  return {
-    owner,
-    symbol,
-    portfolioRow,
-    transactions,
-    wallets,
-    priceHistory
-  };
+  return { owner, symbol, portfolioRow, transactions, wallets, priceHistory };
+}
+
+// =========================
+// AUTH SILENT LOAD
+// =========================
+
+async function loadDataForAuth() {
+  if (STATE.data) return;
+
+  const cachedData = localStorage.getItem(CACHE_KEY);
+  const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+  const cacheStillValid =
+    cachedData &&
+    cachedTime &&
+    (Date.now() - Number(cachedTime)) < 60 * 1000;
+
+  if (cacheStillValid) {
+    STATE.data = JSON.parse(cachedData);
+    return;
+  }
+
+  const response = await fetch(
+    `${CONFIG.API_URL}?token=${CONFIG.TOKEN}&t=${Date.now()}`,
+    { cache: 'no-store' }
+  );
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const json = await response.json();
+  if (!json.success) throw new Error(json.error || 'API Error');
+
+  localStorage.setItem(CACHE_KEY, JSON.stringify(json.data));
+  localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+
+  STATE.data = json.data;
 }
