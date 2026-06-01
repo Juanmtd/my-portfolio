@@ -96,5 +96,12 @@
   <script src="js/ui.js?v=20260601-3"></script>
   <script src="js/app.js?v=20260601-3"></script>
 
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/wallet-chatgpt/sw.js")
+        .then(() => console.log("SW registered"))
+        .catch(err => console.log("SW error:", err));
+    }
+  </script>
 </body>
 </html>
