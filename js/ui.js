@@ -2,7 +2,11 @@
 // HELPERS
 // =========================
 
-function initOwnerSelect() {
+function getTxClass(type) {
+  if (['STAKING_REWARD', 'AIRDROP'].includes(type)) return 'tx-reward';
+  if (['BUY', 'TRANSFER_IN'].includes(type)) return 'tx-in';
+  return 'tx-out';
+}
   const select = document.getElementById('owner-select');
   if (!select) return;
   select.innerHTML = '';
@@ -733,11 +737,11 @@ function renderTransactions() {
           </thead>
           <tbody>
             ${allTxs.map(row => {
-              const isPositive = ['BUY','TRANSFER_IN','STAKING_REWARD','AIRDROP'].includes(row.type);
+              const txClass = getTxClass(row.type);
               return `
                 <tr>
                   <td>${cleanDate(row.date)}</td>
-                  <td><span class="tx-type ${isPositive ? 'tx-in' : 'tx-out'}">${row.type || ''}</span></td>
+                  <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
                   <td><strong>${row.symbol || ''}</strong></td>
                   <td>${row.wallet || ''}</td>
                   <td class="num">${qty(row.qty)}</td>
@@ -754,11 +758,11 @@ function renderTransactions() {
 
   makeSortable('tx-table', allTxs, (sorted) => {
     document.querySelector('#tx-table tbody').innerHTML = sorted.map(row => {
-      const isPositive = ['BUY','TRANSFER_IN','STAKING_REWARD','AIRDROP'].includes(row.type);
+      const txClass = getTxClass(row.type);
       return `
         <tr>
           <td>${cleanDate(row.date)}</td>
-          <td><span class="tx-type ${isPositive ? 'tx-in' : 'tx-out'}">${row.type || ''}</span></td>
+          <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
           <td><strong>${row.symbol || ''}</strong></td>
           <td>${row.wallet || ''}</td>
           <td class="num">${qty(row.qty)}</td>
