@@ -17,7 +17,6 @@ async function renderPriceHistoryChart(symbol, canvasId) {
   if (!canvas) return;
 
   try {
-    // CryptoCompare API — gratuita, sin key, histórico semanal completo
     const url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${symbol}&tsym=USD&limit=2000&aggregate=7`;
     const res = await fetch(url);
     if (!res.ok) return;
@@ -76,10 +75,7 @@ async function renderPriceHistoryChart(symbol, canvasId) {
             grid: { color: 'rgba(255,255,255,0.04)' }
           },
           y: {
-            ticks: {
-              color: '#8f96b2',
-              callback: (v) => '$' + Number(v).toLocaleString('es-ES')
-            },
+            ticks: { color: '#8f96b2', callback: (v) => '$' + Number(v).toLocaleString('es-ES') },
             grid: { color: 'rgba(255,255,255,0.04)' }
           }
         }
@@ -176,6 +172,16 @@ function cleanDate(value) {
 
 function ownerToKey(owner) {
   return String(owner).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '');
+}
+
+function variationBadge(current, previous) {
+  if (!previous || previous === 0) return '';
+  const diff = current - previous;
+  const pct = (diff / previous) * 100;
+  const isPos = diff >= 0;
+  const arrow = isPos ? '▲' : '▼';
+  const cls = isPos ? 'positive' : 'negative';
+  return `<small class="${cls}" style="font-size:11px;display:block;margin-top:6px;">${arrow} ${money(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%) vs anterior</small>`;
 }
 
 // =========================
@@ -518,18 +524,54 @@ function renderDashboard() {
   const perfRows = getPerformanceRows(STATE.owner);
   const investmentLine = perfRows.length ? toNumber(perfRows[perfRows.length - 1].current_investment) : 0;
 
+  // Variación vs snapshot anterior
+  const lastTwo = perfRows.slice(-2);
+  const prevValue = lastTwo.length >= 2 ? toNumber(lastTwo[0].current_value) : 0;
+  const currValue = lastTwo.length >= 1 ? toNumber(lastTwo[lastTwo.length - 1].current_value) : 0;
+  const prevProfit = lastTwo.length >= 2 ? toNumber(lastTwo[0].net_profit) : 0;
+  const currProfit = lastTwo.length >= 1 ? toNumber(lastTwo[lastTwo.length - 1].net_profit) : 0;
+
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card"><span>Total Value</span><strong>${money(ownerData.total_value)}</strong><small>valor actual portfolio</small></div>
-      <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">${money(ownerData.net_profit)}</strong><small>ganancia / pérdida neta</small></div>
-      <div class="metric-card"><span>ROI Total</span><strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(ownerData.roi_total)}</strong><small>retorno total</small></div>
-      <div class="metric-card"><span>Buy USD</span><strong>${money(ownerData.buy_usd)}</strong><small>invertido histórico</small></div>
-      <div class="metric-card"><span>Sell USD</span><strong>${money(ownerData.sell_usd)}</strong><small>vendido histórico</small></div>
-      <div class="metric-card"><span>Current Investment</span><strong>${money(ownerData.current_investment)}</strong><small>buy - sell</small></div>
+      <div class="metric-card">
+        <span>Total Value</span>
+        <strong>${money(ownerData.total_value)}</strong>
+        ${variationBadge(currValue, prevValue)}
+      </div>
+      <div class="metric-card">
+        <span>Net Profit</span>
+        <strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">${money(ownerData.net_profit)}</strong>
+        ${variationBadge(currProfit, prevProfit)}
+      </div>
+      <div class="metric-card">
+        <span>ROI Total</span>
+        <strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(ownerData.roi_total)}</strong>
+        <small>retorno total</small>
+      </div>
+      <div class="metric-card">
+        <span>Buy USD</span>
+        <strong>${money(ownerData.buy_usd)}</strong>
+        <small>invertido histórico</small>
+      </div>
+      <div class="metric-card">
+        <span>Sell USD</span>
+        <strong>${money(ownerData.sell_usd)}</strong>
+        <small>vendido histórico</small>
+      </div>
+      <div class="metric-card">
+        <span>Current Investment</span>
+        <strong>${money(ownerData.current_investment)}</strong>
+        <small>buy - sell</small>
+      </div>
     </section>
+
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Portfolio Evolution</h2><span>${STATE.owner}</span></div>
-      <div style="height:320px;"><canvas id="portfolio-history-chart"></canvas></div>
+      <div class="chart-scroll-wrap">
+        <div class="chart-scroll-inner" style="min-width:${Math.max(600, perfRows.length * 18)}px;height:320px;">
+          <canvas id="portfolio-history-chart"></canvas>
+        </div>
+      </div>
     </section>
   `;
 
@@ -612,10 +654,16 @@ function renderPerformanceTable(rows) {
       <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(latest.net_profit) >= 0 ? 'positive' : 'negative'}">${money(latest.net_profit)}</strong><small>resultado actual</small></div>
       <div class="metric-card"><span>ROI</span><strong class="${toNumber(latest.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(latest.roi_total)}</strong><small>retorno actual</small></div>
     </section>
+
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Performance Evolution</h2><span>${STATE.owner}</span></div>
-      <div style="height:320px;"><canvas id="performance-history-chart"></canvas></div>
+      <div class="chart-scroll-wrap">
+        <div class="chart-scroll-inner" style="min-width:${Math.max(600, rows.length * 18)}px;height:320px;">
+          <canvas id="performance-history-chart"></canvas>
+        </div>
+      </div>
     </section>
+
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Performance History</h2><span>${rows.length} snapshots</span></div>
       <div class="table-wrap">
