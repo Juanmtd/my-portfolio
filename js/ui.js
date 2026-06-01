@@ -9,36 +9,30 @@ function getTxClass(type) {
 }
 
 // =========================
-// COINGECKO PRICE CHART
+// PRICE HISTORY CHART — CryptoCompare
 // =========================
 
-function getCgId(symbol) {
-  const assets = STATE.data?.config_assets || [];
-  const row = assets.find(r => String(r.symbol || '').trim().toUpperCase() === String(symbol).trim().toUpperCase());
-  return row?.cg_id || null;
-}
-
 async function renderPriceHistoryChart(symbol, canvasId) {
-  const cgId = getCgId(symbol);
-  if (!cgId) return;
-
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
 
   try {
-    const url = `https://api.coingecko.com/api/v3/coins/${cgId}/market_chart?vs_currency=usd&days=max&interval=weekly`;
+    // CryptoCompare API — gratuita, sin key, histórico semanal completo
+    const url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${symbol}&tsym=USD&limit=2000&aggregate=7`;
     const res = await fetch(url);
     if (!res.ok) return;
 
     const json = await res.json();
-    const prices = json.prices || [];
-    if (!prices.length) return;
+    if (json.Response !== 'Success') return;
 
-    const labels = prices.map(p => {
-      const d = new Date(p[0]);
+    const data = (json.Data?.Data || []).filter(p => p.close > 0);
+    if (!data.length) return;
+
+    const labels = data.map(p => {
+      const d = new Date(p.time * 1000);
       return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
     });
-    const values = prices.map(p => p[1]);
+    const values = data.map(p => p.close);
 
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
@@ -96,7 +90,7 @@ async function renderPriceHistoryChart(symbol, canvasId) {
     if (wrap) wrap.style.display = 'block';
 
   } catch (err) {
-    console.log('CoinGecko chart error:', err);
+    console.log('Price chart error:', err);
   }
 }
 
@@ -368,7 +362,7 @@ function openAssetModal(row, allocation) {
 
       <div id="price-chart-wrap" style="display:none;margin-top:18px;">
         <div class="asset-extra-header" style="margin-bottom:10px;">
-          <h3>Price History <span style="font-size:12px;color:var(--muted);font-weight:400;">· histórico completo · CoinGecko</span></h3>
+          <h3>Price History <span style="font-size:12px;color:var(--muted);font-weight:400;">· histórico completo · CryptoCompare</span></h3>
         </div>
         <div style="height:180px;">
           <canvas id="asset-price-chart"></canvas>
