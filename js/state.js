@@ -2,12 +2,21 @@ const STATE = {
 
   view: 'dashboard',
 
-  owner: 'Juan Miguel',
+  owner: null,
 
   loading: false,
 
   data: null,
 
-  error: null
+  error: null,
+
+  // Auth
+  auth: {
+    user: null,       // { name, email, picture }
+    canView: [],      // lista de owners que puede ver
+    ready: false      // true cuando el login ya fue comprobado
+  }
 
 };
+
+window.STATE = STATE;
