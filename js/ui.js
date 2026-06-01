@@ -186,7 +186,7 @@ function renderAssetTransactions(transactions) {
 
   return `
     <div class="asset-mini-table asset-mini-scroll">
-      ${transactions.slice(0, 20).map(row => {
+      ${transactions.map(row => {
         const txClass = getTxClass(row.type);
         return `
           <div class="asset-mini-row">
