@@ -181,15 +181,14 @@ function renderAssetWallets(wallets) {
 
   return `
     <div class="asset-mini-table">
-      ${wallets.slice(0, 6).map(row => `
+      ${wallets.map(row => `
         <div class="asset-mini-row">
           <div>
             <strong>${row.wallet || 'Wallet'}</strong>
-            <span>${qty(row.total_qty)} ${row.symbol || ''}</span>
+            <span>${row.type || ''}</span>
           </div>
-
           <div class="num">
-            ${money(row.current_value, 2)}
+            ${row.symbol || ''}
           </div>
         </div>
       `).join('')}
