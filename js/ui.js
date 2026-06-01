@@ -1,8 +1,14 @@
+// =========================
+// HELPERS
+// =========================
+
 function initOwnerSelect() {
   const select = document.getElementById('owner-select');
+  if (!select) return;
   select.innerHTML = '';
 
-  CONFIG.OWNERS.forEach(owner => {
+  const canView = STATE.auth?.canView || CONFIG.OWNERS;
+  canView.forEach(owner => {
     const option = document.createElement('option');
     option.value = owner;
     option.textContent = owner;
@@ -10,7 +16,6 @@ function initOwnerSelect() {
   });
 
   select.value = STATE.owner;
-
   select.addEventListener('change', (e) => {
     STATE.owner = e.target.value;
     render();
@@ -26,21 +31,17 @@ function setActiveNav(view) {
 function toNumber(value) {
   if (value === null || value === undefined || value === '') return 0;
   if (typeof value === 'number') return value;
-
   let text = String(value).replace(/\$/g, '').replace(/€/g, '').replace(/\s/g, '').trim();
-
   if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(text)) {
     text = text.replace(/\./g, '').replace(',', '.');
   } else {
     text = text.replace(',', '.');
   }
-
   return Number(text) || 0;
 }
 
 function money(value, decimals = 0) {
   const n = toNumber(value);
-
   return '$' + n.toLocaleString('es-ES', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
@@ -50,65 +51,43 @@ function money(value, decimals = 0) {
 function percent(value) {
   const n = toNumber(value);
   const v = Math.abs(n) <= 3 ? n * 100 : n;
-
   return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
 }
 
 function roiBadge(value) {
   const n = toNumber(value);
-
-  return `
-    <span class="roi-badge ${n >= 0 ? 'positive' : 'negative'}">
-      ${percent(value)}
-    </span>
-  `;
+  return `<span class="roi-badge ${n >= 0 ? 'positive' : 'negative'}">${percent(value)}</span>`;
 }
 
 function allocationPercent(value) {
   const safe = Math.max(0, Math.min(100, value));
-
-  return `
-    <div class="allocation-wrap">
-      <span class="allocation-percent">${safe.toFixed(1)}%</span>
-    </div>
-  `;
+  return `<div class="allocation-wrap"><span class="allocation-percent">${safe.toFixed(1)}%</span></div>`;
 }
 
 function qty(value) {
   const n = toNumber(value);
-
   if (n === 0) return '0';
   if (n < 0.00001) return n.toFixed(10);
   if (n < 1) return n.toFixed(4);
-
-  return n.toLocaleString('es-ES', {
-    maximumFractionDigits: 4
-  });
+  return n.toLocaleString('es-ES', { maximumFractionDigits: 4 });
 }
 
 function cleanDate(value) {
   const date = new Date(value);
-
   if (Number.isNaN(date.getTime())) return value || '—';
-
-  return date.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit'
-  });
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
 function ownerToKey(owner) {
-  return String(owner)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^\w]/g, '');
+  return String(owner).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '');
 }
+
+// =========================
+// DATA HELPERS
+// =========================
 
 function getDashboardOwner(owner) {
   const rows = STATE.data?.dashboard_global || [];
-
   if (!rows.length) return null;
 
   const ownerKey = ownerToKey(owner);
@@ -116,20 +95,11 @@ function getDashboardOwner(owner) {
   const keys = Object.keys(firstRow);
   const metricKey = keys.find(k => k.startsWith('last_update')) || keys[0];
 
-  const result = {
-    owner,
-    total_value: 0,
-    buy_usd: 0,
-    sell_usd: 0,
-    current_investment: 0,
-    net_profit: 0,
-    roi_total: 0
-  };
+  const result = { owner, total_value: 0, buy_usd: 0, sell_usd: 0, current_investment: 0, net_profit: 0, roi_total: 0 };
 
   rows.forEach(row => {
     const metric = String(row[metricKey] || '').trim().toLowerCase();
     const value = row[ownerKey];
-
     if (metric === 'total value') result.total_value = value;
     if (metric === 'buy usd') result.buy_usd = value;
     if (metric === 'sell usd') result.sell_usd = value;
@@ -142,10 +112,8 @@ function getDashboardOwner(owner) {
 }
 
 function getAllDashboardOwners() {
-  // Filtrar por canView — solo los owners que el usuario tiene permiso de ver
   const canView = STATE.auth?.canView || [];
   const ownersToShow = canView.length > 0 ? canView : CONFIG.OWNERS;
-
   return ownersToShow
     .map(owner => getDashboardOwner(owner))
     .filter(row => row && toNumber(row.total_value) > 0)
@@ -170,55 +138,56 @@ function getPriceRows() {
     .sort((a, b) => String(a.symbol).localeCompare(String(b.symbol)));
 }
 
-function renderAssetWallets(wallets) {
+// =========================
+// MODAL — WALLETS & TXS
+// =========================
+
+function renderAssetWallets(wallets, totalQty) {
   if (!wallets || !wallets.length) {
-    return `
-      <div class="asset-empty">
-        No wallet breakdown available.
-      </div>
-    `;
+    return `<div class="asset-empty">No wallet breakdown available.</div>`;
   }
 
   return `
-    <div class="asset-mini-table">
-      ${wallets.map(row => `
-        <div class="asset-mini-row">
-          <div>
-            <strong>${row.wallet || 'Wallet'}</strong>
-            <span>${row.type || ''}</span>
+    <div class="asset-mini-table asset-mini-scroll">
+      ${wallets.map(row => {
+        const q = toNumber(row.qty);
+        const pct = totalQty > 0 ? (q / totalQty) * 100 : 0;
+        return `
+          <div class="asset-mini-row">
+            <div>
+              <strong>${row.wallet || 'Wallet'}</strong>
+              <span>${row.wallet_type || row.type || ''}</span>
+            </div>
+            <div style="text-align:right;">
+              <div class="num" style="font-size:13px;">${qty(q)}</div>
+              <div style="font-size:11px;color:var(--muted);">${pct.toFixed(1)}%</div>
+            </div>
           </div>
-          <div class="num">
-            ${row.symbol || ''}
-          </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     </div>
   `;
 }
 
 function renderAssetTransactions(transactions) {
   if (!transactions || !transactions.length) {
-    return `
-      <div class="asset-empty">
-        No transactions available.
-      </div>
-    `;
+    return `<div class="asset-empty">No transactions available.</div>`;
   }
 
   return `
-    <div class="asset-mini-table">
-      ${transactions.slice(0, 6).map(row => `
-        <div class="asset-mini-row">
-          <div>
-            <strong>${row.type || 'TX'}</strong>
-            <span>${cleanDate(row.date)} · ${row.wallet || ''}</span>
+    <div class="asset-mini-table asset-mini-scroll">
+      ${transactions.slice(0, 20).map(row => {
+        const isPositive = ['BUY','TRANSFER_IN','STAKING_REWARD','AIRDROP'].includes(row.type);
+        return `
+          <div class="asset-mini-row">
+            <div>
+              <strong class="${isPositive ? 'positive' : 'negative'}">${row.type || 'TX'}</strong>
+              <span>${cleanDate(row.date)} · ${row.wallet || ''}</span>
+            </div>
+            <div class="num">${qty(row.qty)}</div>
           </div>
-
-          <div class="num">
-            ${qty(row.qty)}
-          </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     </div>
   `;
 }
@@ -226,14 +195,12 @@ function renderAssetTransactions(transactions) {
 function openAssetModal(row, allocation) {
   closeAssetModal();
 
-  const deepData = getAssetDeepData
-    ? getAssetDeepData(STATE.owner, row.symbol)
-    : null;
-
+  const deepData = getAssetDeepData ? getAssetDeepData(STATE.owner, row.symbol) : null;
   const wallets = deepData?.wallets || [];
   const transactions = deepData?.transactions || [];
+  const totalQty = toNumber(row.total_qty);
 
-  modal = document.createElement('div');
+  const modal = document.createElement('div');
   modal.className = 'asset-detail-overlay';
   modal.id = 'asset-modal';
 
@@ -244,7 +211,6 @@ function openAssetModal(row, allocation) {
           <small>Asset Detail</small>
           <h2>${row.symbol}</h2>
         </div>
-
         <button class="asset-close" onclick="closeAssetModal()">×</button>
       </div>
 
@@ -253,35 +219,33 @@ function openAssetModal(row, allocation) {
           <span>Qty</span>
           <strong>${qty(row.total_qty)}</strong>
         </div>
-
         <div class="asset-detail-item">
           <span>Price</span>
           <strong>${money(row.current_price, 2)}</strong>
         </div>
-
         <div class="asset-detail-item">
           <span>Avg Net Cost</span>
           <strong>${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</strong>
         </div>
-
         <div class="asset-detail-item">
           <span>Value</span>
           <strong>${money(row.current_value, 2)}</strong>
         </div>
-
         <div class="asset-detail-item">
           <span>Net Profit</span>
           <strong class="${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</strong>
         </div>
-
         <div class="asset-detail-item">
           <span>ROI</span>
           <strong class="${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</strong>
         </div>
-
         <div class="asset-detail-item">
           <span>Allocation</span>
           <strong>${allocation.toFixed(1)}%</strong>
+        </div>
+        <div class="asset-detail-item">
+          <span>Buy USD</span>
+          <strong>${money(row.buy_usd, 2)}</strong>
         </div>
       </div>
 
@@ -291,16 +255,13 @@ function openAssetModal(row, allocation) {
             <h3>Wallets</h3>
             <span>${wallets.length}</span>
           </div>
-
-          ${renderAssetWallets(wallets)}
+          ${renderAssetWallets(wallets, totalQty)}
         </div>
-
         <div class="asset-extra-card">
           <div class="asset-extra-header">
             <h3>Last Transactions</h3>
             <span>${transactions.length}</span>
           </div>
-
           ${renderAssetTransactions(transactions)}
         </div>
       </div>
@@ -308,7 +269,6 @@ function openAssetModal(row, allocation) {
   `;
 
   document.body.appendChild(modal);
-
   modal.addEventListener('click', (e) => {
     if (e.target.id === 'asset-modal') closeAssetModal();
   });
@@ -324,79 +284,138 @@ function bindAssetRows(rows, totalValue) {
     rowEl.addEventListener('click', () => {
       const symbol = rowEl.dataset.symbol;
       const asset = rows.find(row => row.symbol === symbol);
-
       if (!asset) return;
-
-      const allocation = totalValue > 0
-        ? (toNumber(asset.current_value) / totalValue) * 100
-        : 0;
-
+      const allocation = totalValue > 0 ? (toNumber(asset.current_value) / totalValue) * 100 : 0;
       openAssetModal(asset, allocation);
     });
   });
 }
 
+// =========================
+// SORTABLE TABLE
+// =========================
+
+let sortState = { col: null, dir: 1 };
+
+function makeSortable(tableId, rows, renderFn) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  table.querySelectorAll('th[data-sort]').forEach(th => {
+    th.style.cursor = 'pointer';
+    th.style.userSelect = 'none';
+    th.addEventListener('click', () => {
+      const col = th.dataset.sort;
+      if (sortState.col === col) {
+        sortState.dir *= -1;
+      } else {
+        sortState.col = col;
+        sortState.dir = -1;
+      }
+      const sorted = [...rows].sort((a, b) => {
+        const av = toNumber(a[col]) || String(a[col] || '');
+        const bv = toNumber(b[col]) || String(b[col] || '');
+        if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * sortState.dir;
+        return String(av).localeCompare(String(bv)) * sortState.dir;
+      });
+      renderFn(sorted);
+    });
+  });
+}
+
+// =========================
+// LOADING / ERROR
+// =========================
+
 function renderLoading() {
   document.getElementById('app').innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card skeleton-card"></div>
-      <div class="metric-card skeleton-card"></div>
-      <div class="metric-card skeleton-card"></div>
-      <div class="metric-card skeleton-card"></div>
-      <div class="metric-card skeleton-card"></div>
-      <div class="metric-card skeleton-card"></div>
+      ${[1,2,3,4,5,6].map(() => `<div class="metric-card skeleton-card"></div>`).join('')}
     </section>
-
     <section class="table-card skeleton-table" style="margin-top:16px;">
       <div class="skeleton-line skeleton-title"></div>
-      <div class="skeleton-line"></div>
-      <div class="skeleton-line"></div>
-      <div class="skeleton-line"></div>
-      <div class="skeleton-line"></div>
+      ${[1,2,3,4].map(() => `<div class="skeleton-line"></div>`).join('')}
     </section>
   `;
 }
 
 function renderError() {
   document.getElementById('app').innerHTML = `
-    <div style="padding:20px;color:#ff5f7a;">
-      ERROR:<br><br>${STATE.error}
-    </div>
+    <div style="padding:20px;color:#ff5f7a;">ERROR:<br><br>${STATE.error}</div>
   `;
 }
 
 function renderLogin() {
-  // Ocultar app shell
   const appShell = document.querySelector('.app-shell');
   if (appShell) appShell.style.display = 'none';
 
-  // Mostrar login screen si existe, si no crearla
   let loginScreen = document.getElementById('login-screen');
-  if (loginScreen) {
-    loginScreen.style.display = 'flex';
-  }
+  if (loginScreen) loginScreen.style.display = 'flex';
 
-  // Reinicializar Google Identity si está disponible
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.initialize({
       client_id: CONFIG.GOOGLE_CLIENT_ID,
       callback: handleGoogleLogin
     });
-    google.accounts.id.renderButton(
-      document.querySelector('.g_id_signin'),
-      { theme: 'filled_black', size: 'large', width: 280 }
-    );
+    const btn = document.querySelector('.g_id_signin');
+    if (btn) {
+      google.accounts.id.renderButton(btn, { theme: 'filled_black', size: 'large', width: 280 });
+    }
   }
 }
+
+// =========================
+// GLOBAL NAV VISIBILITY
+// =========================
+
+function updateGlobalNavVisibility() {
+  const globalBtn = document.querySelector('.nav-btn[data-view="global"]');
+  if (!globalBtn) return;
+  const canView = STATE.auth?.canView || [];
+  if (canView.length <= 1) {
+    globalBtn.style.display = 'none';
+    if (STATE.view === 'global') {
+      STATE.view = 'dashboard';
+      setActiveNav('dashboard');
+    }
+  } else {
+    globalBtn.style.display = '';
+  }
+}
+
+// =========================
+// USER AVATAR
+// =========================
+
+function updateUserAvatar() {
+  const user = STATE.auth?.user;
+  if (!user) return;
+
+  const img = document.getElementById('user-avatar');
+  if (img && user.picture) {
+    img.src = user.picture;
+    img.style.display = 'block';
+    img.title = user.name || user.email;
+  }
+}
+
+// =========================
+// DASHBOARD
+// =========================
 
 function renderDashboard() {
   const app = document.getElementById('app');
   const ownerData = getDashboardOwner(STATE.owner);
 
   if (!ownerData) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos de dashboard_global para ${STATE.owner}</div>`;
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos para ${STATE.owner}</div>`;
     return;
   }
+
+  const perfRows = getPerformanceRows(STATE.owner);
+  const investmentLine = perfRows.length
+    ? toNumber(perfRows[perfRows.length - 1].current_investment)
+    : 0;
 
   app.innerHTML = `
     <section class="dashboard-grid">
@@ -413,29 +432,23 @@ function renderDashboard() {
         <h2>Portfolio Evolution</h2>
         <span>${STATE.owner}</span>
       </div>
-
       <div style="height:320px;">
         <canvas id="portfolio-history-chart"></canvas>
       </div>
     </section>
   `;
 
-  renderPortfolioHistoryChart(
-    'portfolio-history-chart',
-    getPerformanceRows(STATE.owner)
-  );
+  renderPortfolioHistoryChart('portfolio-history-chart', perfRows, investmentLine);
+  updateUserAvatar();
 }
 
-function renderPortfolio() {
-  const app = document.getElementById('app');
-  const rows = getPortfolioRows(STATE.owner);
+// =========================
+// PORTFOLIO
+// =========================
 
-  if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay holdings para ${STATE.owner}</div>`;
-    return;
-  }
-
+function renderPortfolioTable(rows) {
   const totalValue = rows.reduce((sum, row) => sum + toNumber(row.current_value), 0);
+  const app = document.getElementById('app');
 
   app.innerHTML = `
     <section class="table-card">
@@ -443,34 +456,32 @@ function renderPortfolio() {
         <h2>Portfolio</h2>
         <span>${STATE.owner}</span>
       </div>
-
       <div class="table-wrap">
-        <table>
+        <table id="portfolio-table">
           <thead>
             <tr>
-              <th>Asset</th>
-              <th class="num">Qty</th>
-              <th class="num">Price</th>
-              <th class="num">Value</th>
-              <th class="num">Net Profit</th>
-              <th class="num">ROI</th>
+              <th data-sort="symbol">Asset</th>
+              <th class="num" data-sort="total_qty">Qty</th>
+              <th class="num" data-sort="current_price">Price</th>
+              <th class="num" data-sort="avg_net_cost">Avg Cost</th>
+              <th class="num" data-sort="current_value">Value</th>
+              <th class="num" data-sort="net_profit">Net Profit</th>
+              <th class="num" data-sort="roi_total">ROI</th>
               <th class="num">Alloc</th>
             </tr>
           </thead>
-
           <tbody>
             ${rows.map(row => {
-              const alloc = totalValue > 0
-                ? (toNumber(row.current_value) / totalValue) * 100
-                : 0;
-
+              const alloc = totalValue > 0 ? (toNumber(row.current_value) / totalValue) * 100 : 0;
+              const isPos = toNumber(row.net_profit) >= 0;
               return `
-                <tr class="clickable-row" data-symbol="${row.symbol}">
+                <tr class="clickable-row ${isPos ? 'row-positive' : 'row-negative'}" data-symbol="${row.symbol}">
                   <td><strong>${row.symbol}</strong></td>
                   <td class="num">${qty(row.total_qty)}</td>
                   <td class="num">${money(row.current_price, 2)}</td>
+                  <td class="num">${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</td>
                   <td class="num">${money(row.current_value, 2)}</td>
-                  <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+                  <td class="num ${isPos ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
                   <td class="num">${roiBadge(row.roi_total)}</td>
                   <td class="num allocation-cell">${allocationPercent(alloc)}</td>
                 </tr>
@@ -483,52 +494,37 @@ function renderPortfolio() {
   `;
 
   bindAssetRows(rows, totalValue);
+  makeSortable('portfolio-table', rows, renderPortfolioTable);
 }
 
-function renderPerformance() {
-  const app = document.getElementById('app');
-  const rows = getPerformanceRows(STATE.owner);
-
+function renderPortfolio() {
+  const rows = getPortfolioRows(STATE.owner);
   if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
+    document.getElementById('app').innerHTML = `<div style="color:#ff5f7a;">No hay holdings para ${STATE.owner}</div>`;
     return;
   }
+  sortState = { col: null, dir: 1 };
+  renderPortfolioTable(rows);
+}
 
+// =========================
+// PERFORMANCE
+// =========================
+
+function renderPerformanceTable(rows) {
   const latest = rows[rows.length - 1];
+  const app = document.getElementById('app');
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card">
-        <span>Current Value</span>
-        <strong>${money(latest.current_value)}</strong>
-        <small>último snapshot</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Investment</span>
-        <strong>${money(latest.current_investment)}</strong>
-        <small>inversión actual</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Net Profit</span>
-        <strong class="${toNumber(latest.net_profit) >= 0 ? 'positive' : 'negative'}">${money(latest.net_profit)}</strong>
-        <small>resultado actual</small>
-      </div>
-
-      <div class="metric-card">
-        <span>ROI</span>
-        <strong class="${toNumber(latest.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(latest.roi_total)}</strong>
-        <small>retorno actual</small>
-      </div>
+      <div class="metric-card"><span>Current Value</span><strong>${money(latest.current_value)}</strong><small>último snapshot</small></div>
+      <div class="metric-card"><span>Investment</span><strong>${money(latest.current_investment)}</strong><small>inversión actual</small></div>
+      <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(latest.net_profit) >= 0 ? 'positive' : 'negative'}">${money(latest.net_profit)}</strong><small>resultado actual</small></div>
+      <div class="metric-card"><span>ROI</span><strong class="${toNumber(latest.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(latest.roi_total)}</strong><small>retorno actual</small></div>
     </section>
 
     <section class="table-card" style="margin-top:16px;">
-      <div class="section-header">
-        <h2>Performance Evolution</h2>
-        <span>${STATE.owner}</span>
-      </div>
-
+      <div class="section-header"><h2>Performance Evolution</h2><span>${STATE.owner}</span></div>
       <div style="height:320px;">
         <canvas id="performance-history-chart"></canvas>
       </div>
@@ -539,19 +535,17 @@ function renderPerformance() {
         <h2>Performance History</h2>
         <span>${rows.length} snapshots</span>
       </div>
-
       <div class="table-wrap">
-        <table>
+        <table id="performance-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th class="num">Current Value</th>
-              <th class="num">Investment</th>
-              <th class="num">Net Profit</th>
-              <th class="num">ROI</th>
+              <th data-sort="snapshot_date">Date</th>
+              <th class="num" data-sort="current_value">Current Value</th>
+              <th class="num" data-sort="current_investment">Investment</th>
+              <th class="num" data-sort="net_profit">Net Profit</th>
+              <th class="num" data-sort="roi_total">ROI</th>
             </tr>
           </thead>
-
           <tbody>
             ${rows.slice().reverse().map(row => `
               <tr>
@@ -568,11 +562,33 @@ function renderPerformance() {
     </section>
   `;
 
-  renderPortfolioHistoryChart(
-    'performance-history-chart',
-    rows
-  );
+  renderPortfolioHistoryChart('performance-history-chart', rows, toNumber(latest.current_investment));
+  makeSortable('performance-table', rows.slice().reverse(), (sorted) => {
+    document.querySelector('#performance-table tbody').innerHTML = sorted.map(row => `
+      <tr>
+        <td>${cleanDate(row.snapshot_date)}</td>
+        <td class="num">${money(row.current_value, 2)}</td>
+        <td class="num">${money(row.current_investment, 2)}</td>
+        <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+        <td class="num">${roiBadge(row.roi_total)}</td>
+      </tr>
+    `).join('');
+  });
 }
+
+function renderPerformance() {
+  const rows = getPerformanceRows(STATE.owner);
+  if (!rows.length) {
+    document.getElementById('app').innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
+    return;
+  }
+  sortState = { col: null, dir: 1 };
+  renderPerformanceTable(rows);
+}
+
+// =========================
+// GLOBAL
+// =========================
 
 function renderGlobal() {
   const app = document.getElementById('app');
@@ -587,11 +603,8 @@ function renderGlobal() {
   const totalProfit = rows.reduce((sum, row) => sum + toNumber(row.net_profit), 0);
   const totalBuy = rows.reduce((sum, row) => sum + toNumber(row.buy_usd), 0);
   const globalRoi = totalBuy > 0 ? totalProfit / totalBuy : 0;
-
   const canView = STATE.auth?.canView || [];
-  const label = canView.length === 0 || (canView.length === 1 && canView[0].toUpperCase() === 'ALL')
-    ? 'All owners'
-    : `${rows.length} owners`;
+  const label = canView.includes('ALL') || canView.length === 0 ? 'All owners' : `${rows.length} owners`;
 
   app.innerHTML = `
     <section class="dashboard-grid">
@@ -604,11 +617,7 @@ function renderGlobal() {
     <br>
 
     <section class="table-card">
-      <div class="section-header">
-        <h2>Global Ranking</h2>
-        <span>${label}</span>
-      </div>
-
+      <div class="section-header"><h2>Global Ranking</h2><span>${label}</span></div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -620,7 +629,6 @@ function renderGlobal() {
               <th class="num">ROI</th>
             </tr>
           </thead>
-
           <tbody>
             ${rows.map(row => `
               <tr>
@@ -638,6 +646,10 @@ function renderGlobal() {
   `;
 }
 
+// =========================
+// PRICES
+// =========================
+
 function renderPrices() {
   const app = document.getElementById('app');
   const rows = getPriceRows();
@@ -651,27 +663,12 @@ function renderPrices() {
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card">
-        <span>Assets</span>
-        <strong>${rows.length}</strong>
-        <small>tokens con precio</small>
-      </div>
-
-      <div class="metric-card">
-        <span>Last Update</span>
-        <strong style="font-size:18px;">${lastUpdate}</strong>
-        <small>última actualización de precios</small>
-      </div>
+      <div class="metric-card"><span>Assets</span><strong>${rows.length}</strong><small>tokens con precio</small></div>
+      <div class="metric-card"><span>Last Update</span><strong style="font-size:18px;">${lastUpdate}</strong><small>última actualización</small></div>
     </section>
-
     <br>
-
     <section class="table-card">
-      <div class="section-header">
-        <h2>Prices</h2>
-        <span>wallet_prices</span>
-      </div>
-
+      <div class="section-header"><h2>Prices</h2><span>wallet_prices</span></div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -683,7 +680,6 @@ function renderPrices() {
               <th>Last Update</th>
             </tr>
           </thead>
-
           <tbody>
             ${rows.map(row => `
               <tr>
@@ -701,65 +697,98 @@ function renderPrices() {
   `;
 }
 
-function updateGlobalNavVisibility() {
-  const globalBtn = document.querySelector('.nav-btn[data-view="global"]');
-  if (!globalBtn) return;
+// =========================
+// TRANSACTIONS
+// =========================
 
-  const canView = STATE.auth?.canView || [];
+function renderTransactions() {
+  const app = document.getElementById('app');
+  const allTxs = (STATE.data?.transactions || [])
+    .filter(row => row.owner === STATE.owner)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Ocultar Global si solo puede ver 1 owner
-  if (canView.length <= 1) {
-    globalBtn.style.display = 'none';
-    // Si estaba en global, redirigir a dashboard
-    if (STATE.view === 'global') {
-      STATE.view = 'dashboard';
-      setActiveNav('dashboard');
-    }
-  } else {
-    globalBtn.style.display = '';
+  if (!allTxs.length) {
+    app.innerHTML = `<div style="color:#ff5f7a;">No hay transacciones para ${STATE.owner}</div>`;
+    return;
   }
+
+  app.innerHTML = `
+    <section class="table-card">
+      <div class="section-header">
+        <h2>Transactions</h2>
+        <span>${STATE.owner} · ${allTxs.length} movimientos</span>
+      </div>
+      <div class="table-wrap">
+        <table id="tx-table">
+          <thead>
+            <tr>
+              <th data-sort="date">Date</th>
+              <th data-sort="type">Type</th>
+              <th data-sort="symbol">Asset</th>
+              <th data-sort="wallet">Wallet</th>
+              <th class="num" data-sort="qty">Qty</th>
+              <th class="num" data-sort="price_usd">Price</th>
+              <th class="num" data-sort="total_usd">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allTxs.map(row => {
+              const isPositive = ['BUY','TRANSFER_IN','STAKING_REWARD','AIRDROP'].includes(row.type);
+              return `
+                <tr>
+                  <td>${cleanDate(row.date)}</td>
+                  <td><span class="tx-type ${isPositive ? 'tx-in' : 'tx-out'}">${row.type || ''}</span></td>
+                  <td><strong>${row.symbol || ''}</strong></td>
+                  <td>${row.wallet || ''}</td>
+                  <td class="num">${qty(row.qty)}</td>
+                  <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
+                  <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+
+  makeSortable('tx-table', allTxs, (sorted) => {
+    document.querySelector('#tx-table tbody').innerHTML = sorted.map(row => {
+      const isPositive = ['BUY','TRANSFER_IN','STAKING_REWARD','AIRDROP'].includes(row.type);
+      return `
+        <tr>
+          <td>${cleanDate(row.date)}</td>
+          <td><span class="tx-type ${isPositive ? 'tx-in' : 'tx-out'}">${row.type || ''}</span></td>
+          <td><strong>${row.symbol || ''}</strong></td>
+          <td>${row.wallet || ''}</td>
+          <td class="num">${qty(row.qty)}</td>
+          <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
+          <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
+        </tr>
+      `;
+    }).join('');
+  });
 }
 
+// =========================
+// RENDER
+// =========================
+
 function render() {
-  if (STATE.loading) {
-    renderLoading();
-    return;
-  }
-
-  if (STATE.error) {
-    renderError();
-    return;
-  }
-
-  if (!STATE.data) {
-    renderLoading();
-    return;
-  }
+  if (STATE.loading) { renderLoading(); return; }
+  if (STATE.error) { renderError(); return; }
+  if (!STATE.data) { renderLoading(); return; }
 
   updateGlobalNavVisibility();
+  updateUserAvatar();
 
   switch (STATE.view) {
-    case 'dashboard':
-      renderDashboard();
-      break;
-
-    case 'portfolio':
-      renderPortfolio();
-      break;
-
-    case 'performance':
-      renderPerformance();
-      break;
-
-    case 'global':
-      renderGlobal();
-      break;
-
-    case 'prices':
-      renderPrices();
-      break;
-
-    default:
-      renderDashboard();
+    case 'dashboard':   renderDashboard(); break;
+    case 'portfolio':   renderPortfolio(); break;
+    case 'performance': renderPerformance(); break;
+    case 'global':      renderGlobal(); break;
+    case 'prices':      renderPrices(); break;
+    case 'transactions': renderTransactions(); break;
+    default:            renderDashboard();
   }
 }
