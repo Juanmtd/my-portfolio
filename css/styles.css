@@ -828,3 +828,22 @@ th[data-sort]:hover { color: var(--text); }
   .asset-detail-title h2 { font-size: 38px; }
   .login-card { padding: 24px 20px; }
 }
+
+/* =========================
+   CHART SCROLL
+   ========================= */
+
+.chart-scroll-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.chart-scroll-wrap::-webkit-scrollbar { height: 4px; }
+.chart-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+.chart-scroll-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.chart-scroll-inner {
+  position: relative;
+}
