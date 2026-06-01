@@ -180,8 +180,8 @@ function variationBadge(current, previous) {
   const pct = (diff / previous) * 100;
   const isPos = diff >= 0;
   const arrow = isPos ? '▲' : '▼';
-  const cls = isPos ? 'positive' : 'negative';
-  return `<small class="${cls}" style="font-size:11px;display:block;margin-top:6px;">${arrow} ${money(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%) vs anterior</small>`;
+  const color = isPos ? 'var(--green)' : 'var(--red)';
+  return `<small style="font-size:11px;display:block;margin-top:6px;color:${color};">${arrow} ${money(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%) vs anterior</small>`;
 }
 
 // =========================
