@@ -124,15 +124,25 @@ function getAssetTransactions(owner, symbol) {
 }
 
 function getAssetWalletRows(owner, symbol) {
-  return getDataTable('wallet_summary')
-    .filter(row =>
-      row.owner === owner &&
-      row.symbol === symbol &&
-      toNumber(row.total_qty) !== 0
-    )
-    .sort((a, b) =>
-      toNumber(b.current_value) - toNumber(a.current_value)
-    );
+  // Leer desde wallet_xxx (pestaña individual del owner)
+  const key = 'wallet_' + ownerToKey(owner);
+  const rows = getDataTable(key);
+
+  const row = rows.find(r => String(r.symbol || '').trim().toUpperCase() === String(symbol).trim().toUpperCase());
+
+  if (!row || !row.wallets) return [];
+
+  // wallets y wallet_types son strings separados por coma
+  const walletNames = String(row.wallets).split(',').map(s => s.trim()).filter(Boolean);
+  const walletTypes = String(row.wallet_types || '').split(',').map(s => s.trim());
+
+  return walletNames.map((name, i) => ({
+    wallet: name,
+    type: walletTypes[i] || '',
+    symbol: symbol,
+    total_qty: row.total_qty,
+    current_value: row.current_value
+  }));
 }
 
 function getAssetPriceHistory(symbol) {
