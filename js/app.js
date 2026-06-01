@@ -17,6 +17,7 @@ async function boot() {
     bindRefresh();
     initOwnerSelect();
     updateOwnerBarVisibility();
+    updateGlobalNavVisibility();
 
     await loadData();
     updateLastRefresh();
@@ -118,6 +119,7 @@ async function handleGoogleLogin(response) {
     bindRefresh();
     initOwnerSelect();
     updateOwnerBarVisibility();
+    updateGlobalNavVisibility();
     render();
     updateLastRefresh();
 
