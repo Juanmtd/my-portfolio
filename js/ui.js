@@ -1,5 +1,5 @@
 // =========================
-// HELPERS
+// TX COLOR HELPER
 // =========================
 
 function getTxClass(type) {
@@ -7,6 +7,12 @@ function getTxClass(type) {
   if (['BUY', 'TRANSFER_IN'].includes(type)) return 'tx-in';
   return 'tx-out';
 }
+
+// =========================
+// HELPERS
+// =========================
+
+function initOwnerSelect() {
   const select = document.getElementById('owner-select');
   if (!select) return;
   select.innerHTML = '';
@@ -181,11 +187,11 @@ function renderAssetTransactions(transactions) {
   return `
     <div class="asset-mini-table asset-mini-scroll">
       ${transactions.slice(0, 20).map(row => {
-        const isPositive = ['BUY','TRANSFER_IN','STAKING_REWARD','AIRDROP'].includes(row.type);
+        const txClass = getTxClass(row.type);
         return `
           <div class="asset-mini-row">
             <div>
-              <strong class="${isPositive ? 'positive' : 'negative'}">${row.type || 'TX'}</strong>
+              <strong><span class="tx-type ${txClass}">${row.type || 'TX'}</span></strong>
               <span>${cleanDate(row.date)} · ${row.wallet || ''}</span>
             </div>
             <div class="num">${qty(row.qty)}</div>
@@ -352,8 +358,7 @@ function renderError() {
 function renderLogin() {
   const appShell = document.querySelector('.app-shell');
   if (appShell) appShell.style.display = 'none';
-
-  let loginScreen = document.getElementById('login-screen');
+  const loginScreen = document.getElementById('login-screen');
   if (loginScreen) loginScreen.style.display = 'flex';
 
   if (window.google && google.accounts && google.accounts.id) {
@@ -394,7 +399,6 @@ function updateGlobalNavVisibility() {
 function updateUserAvatar() {
   const user = STATE.auth?.user;
   if (!user) return;
-
   const img = document.getElementById('user-avatar');
   if (img && user.picture) {
     img.src = user.picture;
@@ -417,9 +421,7 @@ function renderDashboard() {
   }
 
   const perfRows = getPerformanceRows(STATE.owner);
-  const investmentLine = perfRows.length
-    ? toNumber(perfRows[perfRows.length - 1].current_investment)
-    : 0;
+  const investmentLine = perfRows.length ? toNumber(perfRows[perfRows.length - 1].current_investment) : 0;
 
   app.innerHTML = `
     <section class="dashboard-grid">
@@ -430,15 +432,9 @@ function renderDashboard() {
       <div class="metric-card"><span>Sell USD</span><strong>${money(ownerData.sell_usd)}</strong><small>vendido histórico</small></div>
       <div class="metric-card"><span>Current Investment</span><strong>${money(ownerData.current_investment)}</strong><small>buy - sell</small></div>
     </section>
-
     <section class="table-card" style="margin-top:16px;">
-      <div class="section-header">
-        <h2>Portfolio Evolution</h2>
-        <span>${STATE.owner}</span>
-      </div>
-      <div style="height:320px;">
-        <canvas id="portfolio-history-chart"></canvas>
-      </div>
+      <div class="section-header"><h2>Portfolio Evolution</h2><span>${STATE.owner}</span></div>
+      <div style="height:320px;"><canvas id="portfolio-history-chart"></canvas></div>
     </section>
   `;
 
@@ -452,14 +448,10 @@ function renderDashboard() {
 
 function renderPortfolioTable(rows) {
   const totalValue = rows.reduce((sum, row) => sum + toNumber(row.current_value), 0);
-  const app = document.getElementById('app');
 
-  app.innerHTML = `
+  document.getElementById('app').innerHTML = `
     <section class="table-card">
-      <div class="section-header">
-        <h2>Portfolio</h2>
-        <span>${STATE.owner}</span>
-      </div>
+      <div class="section-header"><h2>Portfolio</h2><span>${STATE.owner}</span></div>
       <div class="table-wrap">
         <table id="portfolio-table">
           <thead>
@@ -517,28 +509,20 @@ function renderPortfolio() {
 
 function renderPerformanceTable(rows) {
   const latest = rows[rows.length - 1];
-  const app = document.getElementById('app');
 
-  app.innerHTML = `
+  document.getElementById('app').innerHTML = `
     <section class="dashboard-grid">
       <div class="metric-card"><span>Current Value</span><strong>${money(latest.current_value)}</strong><small>último snapshot</small></div>
       <div class="metric-card"><span>Investment</span><strong>${money(latest.current_investment)}</strong><small>inversión actual</small></div>
       <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(latest.net_profit) >= 0 ? 'positive' : 'negative'}">${money(latest.net_profit)}</strong><small>resultado actual</small></div>
       <div class="metric-card"><span>ROI</span><strong class="${toNumber(latest.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(latest.roi_total)}</strong><small>retorno actual</small></div>
     </section>
-
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Performance Evolution</h2><span>${STATE.owner}</span></div>
-      <div style="height:320px;">
-        <canvas id="performance-history-chart"></canvas>
-      </div>
+      <div style="height:320px;"><canvas id="performance-history-chart"></canvas></div>
     </section>
-
     <section class="table-card" style="margin-top:16px;">
-      <div class="section-header">
-        <h2>Performance History</h2>
-        <span>${rows.length} snapshots</span>
-      </div>
+      <div class="section-header"><h2>Performance History</h2><span>${rows.length} snapshots</span></div>
       <div class="table-wrap">
         <table id="performance-table">
           <thead>
@@ -617,9 +601,7 @@ function renderGlobal() {
       <div class="metric-card"><span>Global ROI</span><strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">${percent(globalRoi)}</strong><small>net profit / buy usd</small></div>
       <div class="metric-card"><span>Owners</span><strong>${rows.length}</strong><small>wallets activas</small></div>
     </section>
-
     <br>
-
     <section class="table-card">
       <div class="section-header"><h2>Global Ranking</h2><span>${label}</span></div>
       <div class="table-wrap">
@@ -716,6 +698,21 @@ function renderTransactions() {
     return;
   }
 
+  const renderTxRows = (txs) => txs.map(row => {
+    const txClass = getTxClass(row.type);
+    return `
+      <tr>
+        <td>${cleanDate(row.date)}</td>
+        <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
+        <td><strong>${row.symbol || ''}</strong></td>
+        <td>${row.wallet || ''}</td>
+        <td class="num">${qty(row.qty)}</td>
+        <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
+        <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
+      </tr>
+    `;
+  }).join('');
+
   app.innerHTML = `
     <section class="table-card">
       <div class="section-header">
@@ -735,42 +732,14 @@ function renderTransactions() {
               <th class="num" data-sort="total_usd">Total</th>
             </tr>
           </thead>
-          <tbody>
-            ${allTxs.map(row => {
-              const txClass = getTxClass(row.type);
-              return `
-                <tr>
-                  <td>${cleanDate(row.date)}</td>
-                  <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
-                  <td><strong>${row.symbol || ''}</strong></td>
-                  <td>${row.wallet || ''}</td>
-                  <td class="num">${qty(row.qty)}</td>
-                  <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
-                  <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
+          <tbody>${renderTxRows(allTxs)}</tbody>
         </table>
       </div>
     </section>
   `;
 
   makeSortable('tx-table', allTxs, (sorted) => {
-    document.querySelector('#tx-table tbody').innerHTML = sorted.map(row => {
-      const txClass = getTxClass(row.type);
-      return `
-        <tr>
-          <td>${cleanDate(row.date)}</td>
-          <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
-          <td><strong>${row.symbol || ''}</strong></td>
-          <td>${row.wallet || ''}</td>
-          <td class="num">${qty(row.qty)}</td>
-          <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
-          <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
-        </tr>
-      `;
-    }).join('');
+    document.querySelector('#tx-table tbody').innerHTML = renderTxRows(sorted);
   });
 }
 
@@ -787,12 +756,12 @@ function render() {
   updateUserAvatar();
 
   switch (STATE.view) {
-    case 'dashboard':   renderDashboard(); break;
-    case 'portfolio':   renderPortfolio(); break;
-    case 'performance': renderPerformance(); break;
-    case 'global':      renderGlobal(); break;
-    case 'prices':      renderPrices(); break;
+    case 'dashboard':    renderDashboard(); break;
+    case 'portfolio':    renderPortfolio(); break;
+    case 'performance':  renderPerformance(); break;
+    case 'global':       renderGlobal(); break;
+    case 'prices':       renderPrices(); break;
     case 'transactions': renderTransactions(); break;
-    default:            renderDashboard();
+    default:             renderDashboard();
   }
 }
