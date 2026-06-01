@@ -142,7 +142,11 @@ function getDashboardOwner(owner) {
 }
 
 function getAllDashboardOwners() {
-  return CONFIG.OWNERS
+  // Filtrar por canView — solo los owners que el usuario tiene permiso de ver
+  const canView = STATE.auth?.canView || [];
+  const ownersToShow = canView.length > 0 ? canView : CONFIG.OWNERS;
+
+  return ownersToShow
     .map(owner => getDashboardOwner(owner))
     .filter(row => row && toNumber(row.total_value) > 0)
     .sort((a, b) => toNumber(b.total_value) - toNumber(a.total_value));
@@ -357,6 +361,30 @@ function renderError() {
   `;
 }
 
+function renderLogin() {
+  // Ocultar app shell
+  const appShell = document.querySelector('.app-shell');
+  if (appShell) appShell.style.display = 'none';
+
+  // Mostrar login screen si existe, si no crearla
+  let loginScreen = document.getElementById('login-screen');
+  if (loginScreen) {
+    loginScreen.style.display = 'flex';
+  }
+
+  // Reinicializar Google Identity si está disponible
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.initialize({
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
+      callback: handleGoogleLogin
+    });
+    google.accounts.id.renderButton(
+      document.querySelector('.g_id_signin'),
+      { theme: 'filled_black', size: 'large', width: 280 }
+    );
+  }
+}
+
 function renderDashboard() {
   const app = document.getElementById('app');
   const ownerData = getDashboardOwner(STATE.owner);
@@ -556,6 +584,11 @@ function renderGlobal() {
   const totalBuy = rows.reduce((sum, row) => sum + toNumber(row.buy_usd), 0);
   const globalRoi = totalBuy > 0 ? totalProfit / totalBuy : 0;
 
+  const canView = STATE.auth?.canView || [];
+  const label = canView.length === 0 || (canView.length === 1 && canView[0].toUpperCase() === 'ALL')
+    ? 'All owners'
+    : `${rows.length} owners`;
+
   app.innerHTML = `
     <section class="dashboard-grid">
       <div class="metric-card"><span>Global Value</span><strong>${money(totalValue)}</strong><small>patrimonio total</small></div>
@@ -569,7 +602,7 @@ function renderGlobal() {
     <section class="table-card">
       <div class="section-header">
         <h2>Global Ranking</h2>
-        <span>All owners</span>
+        <span>${label}</span>
       </div>
 
       <div class="table-wrap">
@@ -664,6 +697,25 @@ function renderPrices() {
   `;
 }
 
+function updateGlobalNavVisibility() {
+  const globalBtn = document.querySelector('.nav-btn[data-view="global"]');
+  if (!globalBtn) return;
+
+  const canView = STATE.auth?.canView || [];
+
+  // Ocultar Global si solo puede ver 1 owner
+  if (canView.length <= 1) {
+    globalBtn.style.display = 'none';
+    // Si estaba en global, redirigir a dashboard
+    if (STATE.view === 'global') {
+      STATE.view = 'dashboard';
+      setActiveNav('dashboard');
+    }
+  } else {
+    globalBtn.style.display = '';
+  }
+}
+
 function render() {
   if (STATE.loading) {
     renderLoading();
@@ -679,6 +731,8 @@ function render() {
     renderLoading();
     return;
   }
+
+  updateGlobalNavVisibility();
 
   switch (STATE.view) {
     case 'dashboard':
