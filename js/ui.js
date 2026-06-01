@@ -9,6 +9,98 @@ function getTxClass(type) {
 }
 
 // =========================
+// COINGECKO PRICE CHART
+// =========================
+
+function getCgId(symbol) {
+  const assets = STATE.data?.config_assets || [];
+  const row = assets.find(r => String(r.symbol || '').trim().toUpperCase() === String(symbol).trim().toUpperCase());
+  return row?.cg_id || null;
+}
+
+async function renderPriceHistoryChart(symbol, canvasId) {
+  const cgId = getCgId(symbol);
+  if (!cgId) return;
+
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  try {
+    const url = `https://api.coingecko.com/api/v3/coins/${cgId}/market_chart?vs_currency=usd&days=max&interval=weekly`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+
+    const json = await res.json();
+    const prices = json.prices || [];
+    if (!prices.length) return;
+
+    const labels = prices.map(p => {
+      const d = new Date(p[0]);
+      return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    });
+    const values = prices.map(p => p[1]);
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: '#7c5cfc',
+          backgroundColor: 'rgba(124,92,252,0.08)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHitRadius: 12,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111118',
+            titleColor: '#8f96b2',
+            bodyColor: '#f5f7ff',
+            borderColor: '#262633',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              label: (ctx) => `$${ctx.parsed.y.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#8f96b2', maxTicksLimit: 6, maxRotation: 0 },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          },
+          y: {
+            ticks: {
+              color: '#8f96b2',
+              callback: (v) => '$' + Number(v).toLocaleString('es-ES')
+            },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          }
+        }
+      }
+    });
+
+    const wrap = document.getElementById('price-chart-wrap');
+    if (wrap) wrap.style.display = 'block';
+
+  } catch (err) {
+    console.log('CoinGecko chart error:', err);
+  }
+}
+
+// =========================
 // HELPERS
 // =========================
 
@@ -152,99 +244,10 @@ function getPriceRows() {
 // MODAL — WALLETS & TXS
 // =========================
 
-function getCgId(symbol) {
-  const assets = STATE.data?.config_assets || [];
-  const row = assets.find(r => String(r.symbol || '').trim().toUpperCase() === String(symbol).trim().toUpperCase());
-  return row?.cg_id || null;
-}
-
-async function renderPriceHistoryChart(symbol, canvasId) {
-  const cgId = getCgId(symbol);
-  if (!cgId) return;
-
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-
-  try {
-    const url = `https://api.coingecko.com/api/v3/coins/${cgId}/market_chart?vs_currency=usd&days=max&interval=weekly`;
-    const res = await fetch(url);
-    if (!res.ok) return;
-
-    const json = await res.json();
-    const prices = json.prices || [];
-    if (!prices.length) return;
-
-    const labels = prices.map(p => {
-      const d = new Date(p[0]);
-      return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-    });
-    const values = prices.map(p => p[1]);
-
-    const ctx = canvas.getContext('2d');
-
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          borderColor: '#7c5cfc',
-          backgroundColor: 'rgba(124,92,252,0.08)',
-          fill: true,
-          tension: 0.35,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          pointHitRadius: 12,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#111118',
-            titleColor: '#8f96b2',
-            bodyColor: '#f5f7ff',
-            borderColor: '#262633',
-            borderWidth: 1,
-            padding: 10,
-            displayColors: false,
-            callbacks: {
-              label: (ctx) => `$${ctx.parsed.y.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: { color: '#8f96b2', maxTicksLimit: 6, maxRotation: 0 },
-            grid: { color: 'rgba(255,255,255,0.04)' }
-          },
-          y: {
-            ticks: {
-              color: '#8f96b2',
-              callback: (v) => '$' + Number(v).toLocaleString('es-ES')
-            },
-            grid: { color: 'rgba(255,255,255,0.04)' }
-          }
-        }
-      }
-    });
-
-    // Mostrar el contenedor del gráfico
-    const wrap = document.getElementById(`${canvasId}-wrap`);
-    if (wrap) wrap.style.display = 'block';
-
-  } catch (err) {
-    console.log('CoinGecko chart error:', err);
-  }
-}
+function renderAssetWallets(wallets, totalQty) {
   if (!wallets || !wallets.length) {
     return `<div class="asset-empty">No wallet breakdown available.</div>`;
   }
-
   return `
     <div class="asset-mini-table asset-mini-scroll">
       ${wallets.map(row => {
@@ -271,7 +274,6 @@ function renderAssetTransactions(transactions) {
   if (!transactions || !transactions.length) {
     return `<div class="asset-empty">No transactions available.</div>`;
   }
-
   return `
     <div class="asset-mini-table asset-mini-scroll">
       ${transactions.map(row => {
@@ -380,7 +382,6 @@ function openAssetModal(row, allocation) {
     if (e.target.id === 'asset-modal') closeAssetModal();
   });
 
-  // Cargar gráfico de precio histórico desde CoinGecko
   renderPriceHistoryChart(row.symbol, 'asset-price-chart');
 }
 
