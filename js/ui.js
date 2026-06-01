@@ -261,6 +261,11 @@ function openAssetModal(row, allocation) {
         </div>
 
         <div class="asset-detail-item">
+          <span>Avg Net Cost</span>
+          <strong>${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</strong>
+        </div>
+
+        <div class="asset-detail-item">
           <span>Value</span>
           <strong>${money(row.current_value, 2)}</strong>
         </div>
