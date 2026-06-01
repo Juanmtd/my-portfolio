@@ -1,34 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Wallet 2.0</title>
-
   <link rel="manifest" href="manifest.json" />
-
   <meta name="theme-color" content="#7c5cfc" />
-
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Wallet 2.0" />
-
-  <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <link rel="stylesheet" href="css/styles.css?v=20260601-1" />
+  <link rel="stylesheet" href="css/styles.css?v=20260601-3" />
 </head>
-
 <body>
 
-  <!-- LOGIN SCREEN -->
+  <!-- LOGIN -->
   <div id="login-screen" class="login-screen">
-
     <div class="login-brand">
       <div class="brand-icon">W</div>
       <div class="login-brand-text">
@@ -36,20 +24,14 @@
         <span>Portfolio Intelligence System</span>
       </div>
     </div>
-
     <div class="login-card">
       <p class="login-card-title">Accede a tu cartera</p>
-      <p class="login-card-desc">
-        Inicia sesión con tu cuenta de Google para ver tus inversiones.
-      </p>
-
-      <!-- Botón Google Identity Services -->
+      <p class="login-card-desc">Inicia sesión con tu cuenta de Google para ver tus inversiones.</p>
       <div id="g_id_onload"
         data-client_id="442964568100-nc4i6rn97kprssbb9d737spi3fucs9ae.apps.googleusercontent.com"
         data-callback="handleGoogleLogin"
         data-auto_prompt="false">
       </div>
-
       <div class="g_id_signin"
         data-type="standard"
         data-size="large"
@@ -59,21 +41,15 @@
         data-logo_alignment="left"
         data-width="280">
       </div>
-
       <p id="login-error" class="login-error" style="display:none;"></p>
-
-      <p class="login-footer">
-        Solo lectura · Tus datos no se modifican nunca
-      </p>
+      <p class="login-footer">Solo lectura · Tus datos no se modifican nunca</p>
     </div>
-
   </div>
 
-  <!-- APP SHELL (oculto hasta login) -->
+  <!-- APP -->
   <div class="app app-shell" style="display:none;">
 
     <header class="header">
-
       <div class="brand">
         <div class="brand-icon">W</div>
         <div class="brand-text">
@@ -81,7 +57,6 @@
           <span>Portfolio Intelligence System</span>
         </div>
       </div>
-
       <div class="header-right">
         <span id="last-update">syncing...</span>
         <div id="user-avatar-wrap" class="user-avatar-wrap">
@@ -90,13 +65,13 @@
         <button id="logout-btn" onclick="logout()">Salir</button>
         <button id="refresh-btn">Refresh</button>
       </div>
-
     </header>
 
     <nav class="nav">
       <button class="nav-btn active" data-view="dashboard">Dashboard</button>
       <button class="nav-btn" data-view="portfolio">Portfolio</button>
       <button class="nav-btn" data-view="performance">Performance</button>
+      <button class="nav-btn" data-view="transactions">Transactions</button>
       <button class="nav-btn" data-view="global">Global</button>
       <button class="nav-btn" data-view="prices">Prices</button>
     </nav>
@@ -114,13 +89,12 @@
 
   </div>
 
-  <script src="js/config.js?v=20260601-1"></script>
-  <script src="js/state.js?v=20260601-1"></script>
-  <script src="js/api.js?v=20260601-1"></script>
-  <script src="js/charts.js?v=20260601-1"></script>
-  <script src="js/ui.js?v=20260601-1"></script>
-  <script src="js/app.js?v=20260601-1"></script>
+  <script src="js/config.js?v=20260601-3"></script>
+  <script src="js/state.js?v=20260601-3"></script>
+  <script src="js/api.js?v=20260601-3"></script>
+  <script src="js/charts.js?v=20260601-3"></script>
+  <script src="js/ui.js?v=20260601-3"></script>
+  <script src="js/app.js?v=20260601-3"></script>
 
 </body>
-
 </html>
