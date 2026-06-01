@@ -181,7 +181,7 @@ function variationBadge(current, previous) {
   const isPos = diff >= 0;
   const arrow = isPos ? '▲' : '▼';
   const color = isPos ? 'var(--green)' : 'var(--red)';
-  return `<small style="font-size:11px;display:block;margin-top:6px;color:${color};">${arrow} ${money(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%) vs anterior</small>`;
+  return `<small style="font-size:11px;display:block;margin-top:6px;color:${color};">${arrow} ${money(Math.abs(diff))} (${Math.abs(pct).toFixed(1)}%) último mes</small>`;
 }
 
 // =========================
