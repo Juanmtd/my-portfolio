@@ -766,3 +766,21 @@ tr:last-child td {
     padding: 24px 20px;
   }
 }
+
+/* =========================
+   STICKY TABLE HEADER
+   ========================= */
+
+.table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--panel);
+  box-shadow: 0 1px 0 var(--border);
+}
