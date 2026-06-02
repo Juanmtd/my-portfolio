@@ -950,7 +950,11 @@ const ONBOARDING_STEPS = [
 
 let onboardingStep = 0;
 
-function shouldShowOnboarding() {
+function restartOnboarding() {
+  try { localStorage.removeItem(ONBOARDING_KEY); } catch(e) {}
+  onboardingStep = 0;
+  renderOnboardingStep();
+}
   try {
     return !localStorage.getItem(ONBOARDING_KEY);
   } catch (e) {
