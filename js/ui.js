@@ -15,76 +15,40 @@ function getTxClass(type) {
 async function renderPriceHistoryChart(symbol, canvasId) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
-
   try {
     const url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${symbol}&tsym=USD&limit=2000&aggregate=7`;
     const res = await fetch(url);
     if (!res.ok) return;
-
     const json = await res.json();
     if (json.Response !== 'Success') return;
-
     const data = (json.Data?.Data || []).filter(p => p.close > 0);
     if (!data.length) return;
-
     const labels = data.map(p => {
       const d = new Date(p.time * 1000);
       return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
     });
     const values = data.map(p => p.close);
-
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
       type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          borderColor: '#7c5cfc',
-          backgroundColor: 'rgba(124,92,252,0.08)',
-          fill: true,
-          tension: 0.35,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          pointHitRadius: 12,
-        }]
-      },
+      data: { labels, datasets: [{ data: values, borderColor: '#7c5cfc', backgroundColor: 'rgba(124,92,252,0.08)', fill: true, tension: 0.35, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12 }] },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            backgroundColor: '#111118',
-            titleColor: '#8f96b2',
-            bodyColor: '#f5f7ff',
-            borderColor: '#262633',
-            borderWidth: 1,
-            padding: 10,
-            displayColors: false,
-            callbacks: {
-              label: (ctx) => `$${ctx.parsed.y.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            }
+          tooltip: { backgroundColor: '#111118', titleColor: '#8f96b2', bodyColor: '#f5f7ff', borderColor: '#262633', borderWidth: 1, padding: 10, displayColors: false,
+            callbacks: { label: (ctx) => `$${ctx.parsed.y.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
           }
         },
         scales: {
-          x: {
-            ticks: { color: '#8f96b2', maxTicksLimit: 6, maxRotation: 0 },
-            grid: { color: 'rgba(255,255,255,0.04)' }
-          },
-          y: {
-            ticks: { color: '#8f96b2', callback: (v) => '$' + Number(v).toLocaleString('es-ES') },
-            grid: { color: 'rgba(255,255,255,0.04)' }
-          }
+          x: { ticks: { color: '#8f96b2', maxTicksLimit: 6, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#8f96b2', callback: (v) => '$' + Number(v).toLocaleString('es-ES') }, grid: { color: 'rgba(255,255,255,0.04)' } }
         }
       }
     });
-
     const wrap = document.getElementById('price-chart-wrap');
     if (wrap) wrap.style.display = 'block';
-
   } catch (err) {
     console.log('Price chart error:', err);
   }
@@ -98,7 +62,6 @@ function initOwnerSelect() {
   const select = document.getElementById('owner-select');
   if (!select) return;
   select.innerHTML = '';
-
   const canView = STATE.auth?.canView || CONFIG.OWNERS;
   canView.forEach(owner => {
     const option = document.createElement('option');
@@ -106,12 +69,8 @@ function initOwnerSelect() {
     option.textContent = owner;
     select.appendChild(option);
   });
-
   select.value = STATE.owner;
-  select.addEventListener('change', (e) => {
-    STATE.owner = e.target.value;
-    render();
-  });
+  select.addEventListener('change', (e) => { STATE.owner = e.target.value; render(); });
 }
 
 function setActiveNav(view) {
@@ -134,10 +93,7 @@ function toNumber(value) {
 
 function money(value, decimals = 0) {
   const n = toNumber(value);
-  return '$' + n.toLocaleString('es-ES', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  });
+  return '$' + n.toLocaleString('es-ES', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
 function percent(value) {
@@ -191,14 +147,11 @@ function variationBadge(current, previous) {
 function getDashboardOwner(owner) {
   const rows = STATE.data?.dashboard_global || [];
   if (!rows.length) return null;
-
   const ownerKey = ownerToKey(owner);
   const firstRow = rows[0];
   const keys = Object.keys(firstRow);
   const metricKey = keys.find(k => k.startsWith('last_update')) || keys[0];
-
   const result = { owner, total_value: 0, buy_usd: 0, sell_usd: 0, current_investment: 0, net_profit: 0, roi_total: 0 };
-
   rows.forEach(row => {
     const metric = String(row[metricKey] || '').trim().toLowerCase();
     const value = row[ownerKey];
@@ -209,7 +162,6 @@ function getDashboardOwner(owner) {
     if (metric === 'net profit') result.net_profit = value;
     if (metric === 'roi total') result.roi_total = value;
   });
-
   return result;
 }
 
@@ -241,147 +193,82 @@ function getPriceRows() {
 }
 
 // =========================
-// MODAL — WALLETS & TXS
+// MODAL
 // =========================
 
 function renderAssetWallets(wallets, totalQty) {
-  if (!wallets || !wallets.length) {
-    return `<div class="asset-empty">No wallet breakdown available.</div>`;
-  }
+  if (!wallets || !wallets.length) return `<div class="asset-empty">No wallet breakdown available.</div>`;
   return `
     <div class="asset-mini-table asset-mini-scroll">
       ${wallets.map(row => {
         const q = toNumber(row.qty);
         const pct = totalQty > 0 ? (q / totalQty) * 100 : 0;
-        return `
-          <div class="asset-mini-row">
-            <div>
-              <strong>${row.wallet || 'Wallet'}</strong>
-              <span>${row.wallet_type || row.type || ''}</span>
-            </div>
-            <div style="text-align:right;">
-              <div class="num" style="font-size:13px;">${qty(q)}</div>
-              <div style="font-size:11px;color:var(--muted);">${pct.toFixed(1)}%</div>
-            </div>
-          </div>
-        `;
+        return `<div class="asset-mini-row">
+          <div><strong>${row.wallet || 'Wallet'}</strong><span>${row.wallet_type || row.type || ''}</span></div>
+          <div style="text-align:right;"><div class="num" style="font-size:13px;">${qty(q)}</div><div style="font-size:11px;color:var(--muted);">${pct.toFixed(1)}%</div></div>
+        </div>`;
       }).join('')}
-    </div>
-  `;
+    </div>`;
 }
 
 function renderAssetTransactions(transactions) {
-  if (!transactions || !transactions.length) {
-    return `<div class="asset-empty">No transactions available.</div>`;
-  }
+  if (!transactions || !transactions.length) return `<div class="asset-empty">No transactions available.</div>`;
   return `
     <div class="asset-mini-table asset-mini-scroll">
       ${transactions.map(row => {
         const txClass = getTxClass(row.type);
-        return `
-          <div class="asset-mini-row">
-            <div>
-              <strong><span class="tx-type ${txClass}">${row.type || 'TX'}</span></strong>
-              <span>${cleanDate(row.date)} · ${row.wallet || ''}</span>
-            </div>
-            <div class="num">${qty(row.qty)}</div>
-          </div>
-        `;
+        return `<div class="asset-mini-row">
+          <div><strong><span class="tx-type ${txClass}">${row.type || 'TX'}</span></strong><span>${cleanDate(row.date)} · ${row.wallet || ''}</span></div>
+          <div class="num">${qty(row.qty)}</div>
+        </div>`;
       }).join('')}
-    </div>
-  `;
+    </div>`;
 }
 
 function openAssetModal(row, allocation) {
   closeAssetModal();
-
   const deepData = getAssetDeepData ? getAssetDeepData(STATE.owner, row.symbol) : null;
   const wallets = deepData?.wallets || [];
   const transactions = deepData?.transactions || [];
   const totalQty = toNumber(row.total_qty);
-
   const modal = document.createElement('div');
   modal.className = 'asset-detail-overlay';
   modal.id = 'asset-modal';
-
   modal.innerHTML = `
     <div class="asset-detail-card asset-detail-card-wide">
       <div class="asset-detail-header">
-        <div class="asset-detail-title">
-          <small>Asset Detail</small>
-          <h2>${row.symbol}</h2>
-        </div>
+        <div class="asset-detail-title"><small>Asset Detail</small><h2>${row.symbol}</h2></div>
         <button class="asset-close" onclick="closeAssetModal()">×</button>
       </div>
-
       <div class="asset-detail-grid">
-        <div class="asset-detail-item">
-          <span>Qty</span>
-          <strong>${qty(row.total_qty)}</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>Price</span>
-          <strong>${money(row.current_price, 2)}</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>Avg Net Cost</span>
-          <strong>${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>Value</span>
-          <strong>${money(row.current_value, 2)}</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>Net Profit</span>
-          <strong class="${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>ROI</span>
-          <strong class="${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>Allocation</span>
-          <strong>${allocation.toFixed(1)}%</strong>
-        </div>
-        <div class="asset-detail-item">
-          <span>Buy USD</span>
-          <strong>${money(row.buy_usd, 2)}</strong>
-        </div>
+        <div class="asset-detail-item"><span>Qty</span><strong>${qty(row.total_qty)}</strong></div>
+        <div class="asset-detail-item"><span>Price</span><strong>${money(row.current_price, 2)}</strong></div>
+        <div class="asset-detail-item"><span>Avg Net Cost</span><strong>${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</strong></div>
+        <div class="asset-detail-item"><span>Value</span><strong>${money(row.current_value, 2)}</strong></div>
+        <div class="asset-detail-item"><span>Net Profit</span><strong class="${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</strong></div>
+        <div class="asset-detail-item"><span>ROI</span><strong class="${toNumber(row.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(row.roi_total)}</strong></div>
+        <div class="asset-detail-item"><span>Allocation</span><strong>${allocation.toFixed(1)}%</strong></div>
+        <div class="asset-detail-item"><span>Buy USD</span><strong>${money(row.buy_usd, 2)}</strong></div>
       </div>
-
       <div class="asset-extra-section">
         <div class="asset-extra-card">
-          <div class="asset-extra-header">
-            <h3>Wallets</h3>
-            <span>${wallets.length}</span>
-          </div>
+          <div class="asset-extra-header"><h3>Wallets</h3><span>${wallets.length}</span></div>
           ${renderAssetWallets(wallets, totalQty)}
         </div>
         <div class="asset-extra-card">
-          <div class="asset-extra-header">
-            <h3>Last Transactions</h3>
-            <span>${transactions.length}</span>
-          </div>
+          <div class="asset-extra-header"><h3>Last Transactions</h3><span>${transactions.length}</span></div>
           ${renderAssetTransactions(transactions)}
         </div>
       </div>
-
       <div id="price-chart-wrap" style="display:none;margin-top:18px;">
         <div class="asset-extra-header" style="margin-bottom:10px;">
           <h3>Price History <span style="font-size:12px;color:var(--muted);font-weight:400;">· histórico completo · CryptoCompare</span></h3>
         </div>
-        <div style="height:180px;">
-          <canvas id="asset-price-chart"></canvas>
-        </div>
+        <div style="height:180px;"><canvas id="asset-price-chart"></canvas></div>
       </div>
-    </div>
-  `;
-
+    </div>`;
   document.body.appendChild(modal);
-  modal.addEventListener('click', (e) => {
-    if (e.target.id === 'asset-modal') closeAssetModal();
-  });
-
+  modal.addEventListener('click', (e) => { if (e.target.id === 'asset-modal') closeAssetModal(); });
   renderPriceHistoryChart(row.symbol, 'asset-price-chart');
 }
 
@@ -403,7 +290,7 @@ function bindAssetRows(rows, totalValue) {
 }
 
 // =========================
-// SORTABLE TABLE
+// SORTABLE
 // =========================
 
 let sortState = { col: null, dir: 1 };
@@ -411,18 +298,12 @@ let sortState = { col: null, dir: 1 };
 function makeSortable(tableId, rows, renderFn) {
   const table = document.getElementById(tableId);
   if (!table) return;
-
   table.querySelectorAll('th[data-sort]').forEach(th => {
     th.style.cursor = 'pointer';
     th.style.userSelect = 'none';
     th.addEventListener('click', () => {
       const col = th.dataset.sort;
-      if (sortState.col === col) {
-        sortState.dir *= -1;
-      } else {
-        sortState.col = col;
-        sortState.dir = -1;
-      }
+      if (sortState.col === col) { sortState.dir *= -1; } else { sortState.col = col; sortState.dir = -1; }
       const sorted = [...rows].sort((a, b) => {
         const av = toNumber(a[col]) || String(a[col] || '');
         const bv = toNumber(b[col]) || String(b[col] || '');
@@ -435,25 +316,20 @@ function makeSortable(tableId, rows, renderFn) {
 }
 
 // =========================
-// LOADING / ERROR
+// LOADING / ERROR / LOGIN
 // =========================
 
 function renderLoading() {
   document.getElementById('app').innerHTML = `
-    <section class="dashboard-grid">
-      ${[1,2,3,4,5,6].map(() => `<div class="metric-card skeleton-card"></div>`).join('')}
-    </section>
+    <section class="dashboard-grid">${[1,2,3,4,5,6].map(() => `<div class="metric-card skeleton-card"></div>`).join('')}</section>
     <section class="table-card skeleton-table" style="margin-top:16px;">
       <div class="skeleton-line skeleton-title"></div>
       ${[1,2,3,4].map(() => `<div class="skeleton-line"></div>`).join('')}
-    </section>
-  `;
+    </section>`;
 }
 
 function renderError() {
-  document.getElementById('app').innerHTML = `
-    <div style="padding:20px;color:#ff5f7a;">ERROR:<br><br>${STATE.error}</div>
-  `;
+  document.getElementById('app').innerHTML = `<div style="padding:20px;color:#ff5f7a;">ERROR:<br><br>${STATE.error}</div>`;
 }
 
 function renderLogin() {
@@ -461,21 +337,15 @@ function renderLogin() {
   if (appShell) appShell.style.display = 'none';
   const loginScreen = document.getElementById('login-screen');
   if (loginScreen) loginScreen.style.display = 'flex';
-
   if (window.google && google.accounts && google.accounts.id) {
-    google.accounts.id.initialize({
-      client_id: CONFIG.GOOGLE_CLIENT_ID,
-      callback: handleGoogleLogin
-    });
+    google.accounts.id.initialize({ client_id: CONFIG.GOOGLE_CLIENT_ID, callback: handleGoogleLogin });
     const btn = document.querySelector('.g_id_signin');
-    if (btn) {
-      google.accounts.id.renderButton(btn, { theme: 'filled_black', size: 'large', width: 280 });
-    }
+    if (btn) google.accounts.id.renderButton(btn, { theme: 'filled_black', size: 'large', width: 280 });
   }
 }
 
 // =========================
-// GLOBAL NAV VISIBILITY
+// NAV / AVATAR
 // =========================
 
 function updateGlobalNavVisibility() {
@@ -484,28 +354,17 @@ function updateGlobalNavVisibility() {
   const canView = STATE.auth?.canView || [];
   if (canView.length <= 1) {
     globalBtn.style.display = 'none';
-    if (STATE.view === 'global') {
-      STATE.view = 'dashboard';
-      setActiveNav('dashboard');
-    }
+    if (STATE.view === 'global') { STATE.view = 'dashboard'; setActiveNav('dashboard'); }
   } else {
     globalBtn.style.display = '';
   }
 }
 
-// =========================
-// USER AVATAR
-// =========================
-
 function updateUserAvatar() {
   const user = STATE.auth?.user;
   if (!user) return;
   const img = document.getElementById('user-avatar');
-  if (img && user.picture) {
-    img.src = user.picture;
-    img.style.display = 'block';
-    img.title = user.name || user.email;
-  }
+  if (img && user.picture) { img.src = user.picture; img.style.display = 'block'; img.title = user.name || user.email; }
 }
 
 // =========================
@@ -515,16 +374,9 @@ function updateUserAvatar() {
 function renderDashboard() {
   const app = document.getElementById('app');
   const ownerData = getDashboardOwner(STATE.owner);
-
-  if (!ownerData) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos para ${STATE.owner}</div>`;
-    return;
-  }
-
+  if (!ownerData) { app.innerHTML = `<div style="color:#ff5f7a;">No hay datos para ${STATE.owner}</div>`; return; }
   const perfRows = getPerformanceRows(STATE.owner);
   const investmentLine = perfRows.length ? toNumber(perfRows[perfRows.length - 1].current_investment) : 0;
-
-  // Variación vs snapshot anterior
   const lastTwo = perfRows.slice(-2);
   const prevValue = lastTwo.length >= 2 ? toNumber(lastTwo[0].current_value) : 0;
   const currValue = lastTwo.length >= 1 ? toNumber(lastTwo[lastTwo.length - 1].current_value) : 0;
@@ -533,38 +385,13 @@ function renderDashboard() {
 
   app.innerHTML = `
     <section class="dashboard-grid">
-      <div class="metric-card">
-        <span>Total Value</span>
-        <strong>${money(ownerData.total_value)}</strong>
-        ${variationBadge(currValue, prevValue)}
-      </div>
-      <div class="metric-card">
-        <span>Net Profit</span>
-        <strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">${money(ownerData.net_profit)}</strong>
-        ${variationBadge(currProfit, prevProfit)}
-      </div>
-      <div class="metric-card">
-        <span>ROI Total</span>
-        <strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(ownerData.roi_total)}</strong>
-        <small>retorno total</small>
-      </div>
-      <div class="metric-card">
-        <span>Buy USD</span>
-        <strong>${money(ownerData.buy_usd)}</strong>
-        <small>invertido histórico</small>
-      </div>
-      <div class="metric-card">
-        <span>Sell USD</span>
-        <strong>${money(ownerData.sell_usd)}</strong>
-        <small>vendido histórico</small>
-      </div>
-      <div class="metric-card">
-        <span>Current Investment</span>
-        <strong>${money(ownerData.current_investment)}</strong>
-        <small>buy - sell</small>
-      </div>
+      <div class="metric-card"><span>Total Value</span><strong>${money(ownerData.total_value)}</strong>${variationBadge(currValue, prevValue)}</div>
+      <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(ownerData.net_profit) >= 0 ? 'positive' : 'negative'}">${money(ownerData.net_profit)}</strong>${variationBadge(currProfit, prevProfit)}</div>
+      <div class="metric-card"><span>ROI Total</span><strong class="${toNumber(ownerData.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(ownerData.roi_total)}</strong><small>retorno total</small></div>
+      <div class="metric-card"><span>Buy USD</span><strong>${money(ownerData.buy_usd)}</strong><small>invertido histórico</small></div>
+      <div class="metric-card"><span>Sell USD</span><strong>${money(ownerData.sell_usd)}</strong><small>vendido histórico</small></div>
+      <div class="metric-card"><span>Current Investment</span><strong>${money(ownerData.current_investment)}</strong><small>buy - sell</small></div>
     </section>
-
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Portfolio Evolution</h2><span>${STATE.owner}</span></div>
       <div class="chart-scroll-wrap">
@@ -572,9 +399,7 @@ function renderDashboard() {
           <canvas id="portfolio-history-chart"></canvas>
         </div>
       </div>
-    </section>
-  `;
-
+    </section>`;
   renderPortfolioHistoryChart('portfolio-history-chart', perfRows, investmentLine);
   updateUserAvatar();
 }
@@ -585,57 +410,47 @@ function renderDashboard() {
 
 function renderPortfolioTable(rows) {
   const totalValue = rows.reduce((sum, row) => sum + toNumber(row.current_value), 0);
-
   document.getElementById('app').innerHTML = `
     <section class="table-card">
       <div class="section-header"><h2>Portfolio</h2><span>${STATE.owner}</span></div>
       <div class="table-wrap">
         <table id="portfolio-table">
-          <thead>
-            <tr>
-              <th data-sort="symbol">Asset</th>
-              <th class="num" data-sort="total_qty">Qty</th>
-              <th class="num" data-sort="current_price">Price</th>
-              <th class="num" data-sort="avg_net_cost">Avg Cost</th>
-              <th class="num" data-sort="current_value">Value</th>
-              <th class="num" data-sort="net_profit">Net Profit</th>
-              <th class="num" data-sort="roi_total">ROI</th>
-              <th class="num">Alloc</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th data-sort="symbol">Asset</th>
+            <th class="num" data-sort="total_qty">Qty</th>
+            <th class="num" data-sort="current_price">Price</th>
+            <th class="num" data-sort="avg_net_cost">Avg Cost</th>
+            <th class="num" data-sort="current_value">Value</th>
+            <th class="num" data-sort="net_profit">Net Profit</th>
+            <th class="num" data-sort="roi_total">ROI</th>
+            <th class="num">Alloc</th>
+          </tr></thead>
           <tbody>
             ${rows.map(row => {
               const alloc = totalValue > 0 ? (toNumber(row.current_value) / totalValue) * 100 : 0;
               const isPos = toNumber(row.net_profit) >= 0;
-              return `
-                <tr class="clickable-row ${isPos ? 'row-positive' : 'row-negative'}" data-symbol="${row.symbol}">
-                  <td><strong>${row.symbol}</strong></td>
-                  <td class="num">${qty(row.total_qty)}</td>
-                  <td class="num">${money(row.current_price, 2)}</td>
-                  <td class="num">${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</td>
-                  <td class="num">${money(row.current_value, 2)}</td>
-                  <td class="num ${isPos ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                  <td class="num">${roiBadge(row.roi_total)}</td>
-                  <td class="num allocation-cell">${allocationPercent(alloc)}</td>
-                </tr>
-              `;
+              return `<tr class="clickable-row ${isPos ? 'row-positive' : 'row-negative'}" data-symbol="${row.symbol}">
+                <td><strong>${row.symbol}</strong></td>
+                <td class="num">${qty(row.total_qty)}</td>
+                <td class="num">${money(row.current_price, 2)}</td>
+                <td class="num">${toNumber(row.avg_net_cost) !== 0 ? money(row.avg_net_cost, 2) : '—'}</td>
+                <td class="num">${money(row.current_value, 2)}</td>
+                <td class="num ${isPos ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+                <td class="num">${roiBadge(row.roi_total)}</td>
+                <td class="num allocation-cell">${allocationPercent(alloc)}</td>
+              </tr>`;
             }).join('')}
           </tbody>
         </table>
       </div>
-    </section>
-  `;
-
+    </section>`;
   bindAssetRows(rows, totalValue);
   makeSortable('portfolio-table', rows, renderPortfolioTable);
 }
 
 function renderPortfolio() {
   const rows = getPortfolioRows(STATE.owner);
-  if (!rows.length) {
-    document.getElementById('app').innerHTML = `<div style="color:#ff5f7a;">No hay holdings para ${STATE.owner}</div>`;
-    return;
-  }
+  if (!rows.length) { document.getElementById('app').innerHTML = `<div style="color:#ff5f7a;">No hay holdings para ${STATE.owner}</div>`; return; }
   sortState = { col: null, dir: 1 };
   renderPortfolioTable(rows);
 }
@@ -646,7 +461,6 @@ function renderPortfolio() {
 
 function renderPerformanceTable(rows) {
   const latest = rows[rows.length - 1];
-
   document.getElementById('app').innerHTML = `
     <section class="dashboard-grid">
       <div class="metric-card"><span>Current Value</span><strong>${money(latest.current_value)}</strong><small>último snapshot</small></div>
@@ -654,7 +468,6 @@ function renderPerformanceTable(rows) {
       <div class="metric-card"><span>Net Profit</span><strong class="${toNumber(latest.net_profit) >= 0 ? 'positive' : 'negative'}">${money(latest.net_profit)}</strong><small>resultado actual</small></div>
       <div class="metric-card"><span>ROI</span><strong class="${toNumber(latest.roi_total) >= 0 ? 'positive' : 'negative'}">${percent(latest.roi_total)}</strong><small>retorno actual</small></div>
     </section>
-
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Performance Evolution</h2><span>${STATE.owner}</span></div>
       <div class="chart-scroll-wrap">
@@ -663,56 +476,44 @@ function renderPerformanceTable(rows) {
         </div>
       </div>
     </section>
-
     <section class="table-card" style="margin-top:16px;">
       <div class="section-header"><h2>Performance History</h2><span>${rows.length} snapshots</span></div>
       <div class="table-wrap">
         <table id="performance-table">
-          <thead>
-            <tr>
-              <th data-sort="snapshot_date">Date</th>
-              <th class="num" data-sort="current_value">Current Value</th>
-              <th class="num" data-sort="current_investment">Investment</th>
-              <th class="num" data-sort="net_profit">Net Profit</th>
-              <th class="num" data-sort="roi_total">ROI</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th data-sort="snapshot_date">Date</th>
+            <th class="num" data-sort="current_value">Current Value</th>
+            <th class="num" data-sort="current_investment">Investment</th>
+            <th class="num" data-sort="net_profit">Net Profit</th>
+            <th class="num" data-sort="roi_total">ROI</th>
+          </tr></thead>
           <tbody>
-            ${rows.slice().reverse().map(row => `
-              <tr>
-                <td>${cleanDate(row.snapshot_date)}</td>
-                <td class="num">${money(row.current_value, 2)}</td>
-                <td class="num">${money(row.current_investment, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                <td class="num">${roiBadge(row.roi_total)}</td>
-              </tr>
-            `).join('')}
+            ${rows.slice().reverse().map(row => `<tr>
+              <td>${cleanDate(row.snapshot_date)}</td>
+              <td class="num">${money(row.current_value, 2)}</td>
+              <td class="num">${money(row.current_investment, 2)}</td>
+              <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+              <td class="num">${roiBadge(row.roi_total)}</td>
+            </tr>`).join('')}
           </tbody>
         </table>
       </div>
-    </section>
-  `;
-
+    </section>`;
   renderPortfolioHistoryChart('performance-history-chart', rows, toNumber(latest.current_investment));
   makeSortable('performance-table', rows.slice().reverse(), (sorted) => {
-    document.querySelector('#performance-table tbody').innerHTML = sorted.map(row => `
-      <tr>
-        <td>${cleanDate(row.snapshot_date)}</td>
-        <td class="num">${money(row.current_value, 2)}</td>
-        <td class="num">${money(row.current_investment, 2)}</td>
-        <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-        <td class="num">${roiBadge(row.roi_total)}</td>
-      </tr>
-    `).join('');
+    document.querySelector('#performance-table tbody').innerHTML = sorted.map(row => `<tr>
+      <td>${cleanDate(row.snapshot_date)}</td>
+      <td class="num">${money(row.current_value, 2)}</td>
+      <td class="num">${money(row.current_investment, 2)}</td>
+      <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+      <td class="num">${roiBadge(row.roi_total)}</td>
+    </tr>`).join('');
   });
 }
 
 function renderPerformance() {
   const rows = getPerformanceRows(STATE.owner);
-  if (!rows.length) {
-    document.getElementById('app').innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`;
-    return;
-  }
+  if (!rows.length) { document.getElementById('app').innerHTML = `<div style="color:#ff5f7a;">No hay histórico para ${STATE.owner}</div>`; return; }
   sortState = { col: null, dir: 1 };
   renderPerformanceTable(rows);
 }
@@ -724,55 +525,37 @@ function renderPerformance() {
 function renderGlobal() {
   const app = document.getElementById('app');
   const rows = getAllDashboardOwners();
-
-  if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay datos globales.</div>`;
-    return;
-  }
-
+  if (!rows.length) { app.innerHTML = `<div style="color:#ff5f7a;">No hay datos globales.</div>`; return; }
   const totalValue = rows.reduce((sum, row) => sum + toNumber(row.total_value), 0);
   const totalProfit = rows.reduce((sum, row) => sum + toNumber(row.net_profit), 0);
   const totalBuy = rows.reduce((sum, row) => sum + toNumber(row.buy_usd), 0);
   const globalRoi = totalBuy > 0 ? totalProfit / totalBuy : 0;
   const canView = STATE.auth?.canView || [];
   const label = canView.includes('ALL') || canView.length === 0 ? 'All owners' : `${rows.length} owners`;
-
   app.innerHTML = `
     <section class="dashboard-grid">
       <div class="metric-card"><span>Global Value</span><strong>${money(totalValue)}</strong><small>patrimonio total</small></div>
       <div class="metric-card"><span>Global Net Profit</span><strong class="${totalProfit >= 0 ? 'positive' : 'negative'}">${money(totalProfit)}</strong><small>resultado consolidado</small></div>
       <div class="metric-card"><span>Global ROI</span><strong class="${globalRoi >= 0 ? 'positive' : 'negative'}">${percent(globalRoi)}</strong><small>net profit / buy usd</small></div>
       <div class="metric-card"><span>Owners</span><strong>${rows.length}</strong><small>wallets activas</small></div>
-    </section>
-    <br>
+    </section><br>
     <section class="table-card">
       <div class="section-header"><h2>Global Ranking</h2><span>${label}</span></div>
       <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Owner</th>
-              <th class="num">Total Value</th>
-              <th class="num">Buy USD</th>
-              <th class="num">Net Profit</th>
-              <th class="num">ROI</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(row => `
-              <tr>
-                <td><strong>${row.owner}</strong></td>
-                <td class="num">${money(row.total_value, 2)}</td>
-                <td class="num">${money(row.buy_usd, 2)}</td>
-                <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
-                <td class="num">${roiBadge(row.roi_total)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <table><thead><tr>
+          <th>Owner</th><th class="num">Total Value</th><th class="num">Buy USD</th><th class="num">Net Profit</th><th class="num">ROI</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(row => `<tr>
+            <td><strong>${row.owner}</strong></td>
+            <td class="num">${money(row.total_value, 2)}</td>
+            <td class="num">${money(row.buy_usd, 2)}</td>
+            <td class="num ${toNumber(row.net_profit) >= 0 ? 'positive' : 'negative'}">${money(row.net_profit, 2)}</td>
+            <td class="num">${roiBadge(row.roi_total)}</td>
+          </tr>`).join('')}
+        </tbody></table>
       </div>
-    </section>
-  `;
+    </section>`;
 }
 
 // =========================
@@ -782,48 +565,30 @@ function renderGlobal() {
 function renderPrices() {
   const app = document.getElementById('app');
   const rows = getPriceRows();
-
-  if (!rows.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay precios disponibles.</div>`;
-    return;
-  }
-
+  if (!rows.length) { app.innerHTML = `<div style="color:#ff5f7a;">No hay precios disponibles.</div>`; return; }
   const lastUpdate = rows[0]?.last_update || '—';
-
   app.innerHTML = `
     <section class="dashboard-grid">
       <div class="metric-card"><span>Assets</span><strong>${rows.length}</strong><small>tokens con precio</small></div>
       <div class="metric-card"><span>Last Update</span><strong style="font-size:18px;">${lastUpdate}</strong><small>última actualización</small></div>
-    </section>
-    <br>
+    </section><br>
     <section class="table-card">
       <div class="section-header"><h2>Prices</h2><span>wallet_prices</span></div>
       <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Asset</th>
-              <th>Name</th>
-              <th class="num">Price USD</th>
-              <th>Source</th>
-              <th>Last Update</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(row => `
-              <tr>
-                <td><strong>${row.symbol}</strong></td>
-                <td>${row.name || ''}</td>
-                <td class="num">${money(row.price_usd, 6)}</td>
-                <td>${row.source || ''}</td>
-                <td>${row.last_update || ''}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <table><thead><tr>
+          <th>Asset</th><th>Name</th><th class="num">Price USD</th><th>Source</th><th>Last Update</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(row => `<tr>
+            <td><strong>${row.symbol}</strong></td>
+            <td>${row.name || ''}</td>
+            <td class="num">${money(row.price_usd, 6)}</td>
+            <td>${row.source || ''}</td>
+            <td>${row.last_update || ''}</td>
+          </tr>`).join('')}
+        </tbody></table>
       </div>
-    </section>
-  `;
+    </section>`;
 }
 
 // =========================
@@ -835,137 +600,60 @@ function renderTransactions() {
   const allTxs = (STATE.data?.transactions || [])
     .filter(row => row.owner === STATE.owner)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  if (!allTxs.length) {
-    app.innerHTML = `<div style="color:#ff5f7a;">No hay transacciones para ${STATE.owner}</div>`;
-    return;
-  }
-
+  if (!allTxs.length) { app.innerHTML = `<div style="color:#ff5f7a;">No hay transacciones para ${STATE.owner}</div>`; return; }
   const renderTxRows = (txs) => txs.map(row => {
     const txClass = getTxClass(row.type);
-    return `
-      <tr>
-        <td>${cleanDate(row.date)}</td>
-        <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
-        <td><strong>${row.symbol || ''}</strong></td>
-        <td>${row.wallet || ''}</td>
-        <td class="num">${qty(row.qty)}</td>
-        <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
-        <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
-      </tr>
-    `;
+    return `<tr>
+      <td>${cleanDate(row.date)}</td>
+      <td><span class="tx-type ${txClass}">${row.type || ''}</span></td>
+      <td><strong>${row.symbol || ''}</strong></td>
+      <td>${row.wallet || ''}</td>
+      <td class="num">${qty(row.qty)}</td>
+      <td class="num">${toNumber(row.price_usd) > 0 ? money(row.price_usd, 4) : '—'}</td>
+      <td class="num">${toNumber(row.total_usd) > 0 ? money(row.total_usd, 2) : '—'}</td>
+    </tr>`;
   }).join('');
-
   app.innerHTML = `
     <section class="table-card">
-      <div class="section-header">
-        <h2>Transactions</h2>
-        <span>${STATE.owner} · ${allTxs.length} movimientos</span>
-      </div>
+      <div class="section-header"><h2>Transactions</h2><span>${STATE.owner} · ${allTxs.length} movimientos</span></div>
       <div class="table-wrap">
         <table id="tx-table">
-          <thead>
-            <tr>
-              <th data-sort="date">Date</th>
-              <th data-sort="type">Type</th>
-              <th data-sort="symbol">Asset</th>
-              <th data-sort="wallet">Wallet</th>
-              <th class="num" data-sort="qty">Qty</th>
-              <th class="num" data-sort="price_usd">Price</th>
-              <th class="num" data-sort="total_usd">Total</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th data-sort="date">Date</th><th data-sort="type">Type</th><th data-sort="symbol">Asset</th>
+            <th data-sort="wallet">Wallet</th><th class="num" data-sort="qty">Qty</th>
+            <th class="num" data-sort="price_usd">Price</th><th class="num" data-sort="total_usd">Total</th>
+          </tr></thead>
           <tbody>${renderTxRows(allTxs)}</tbody>
         </table>
       </div>
-    </section>
-  `;
-
+    </section>`;
   makeSortable('tx-table', allTxs, (sorted) => {
     document.querySelector('#tx-table tbody').innerHTML = renderTxRows(sorted);
   });
 }
 
 // =========================
-// RENDER
-// =========================
-
-function render() {
-  if (STATE.loading) { renderLoading(); return; }
-  if (STATE.error) { renderError(); return; }
-  if (!STATE.data) { renderLoading(); return; }
-
-  updateGlobalNavVisibility();
-  updateUserAvatar();
-
-  switch (STATE.view) {
-    case 'dashboard':    renderDashboard(); break;
-    case 'portfolio':    renderPortfolio(); break;
-    case 'performance':  renderPerformance(); break;
-    case 'global':       renderGlobal(); break;
-    case 'prices':       renderPrices(); break;
-    case 'transactions': renderTransactions(); break;
-    default:             renderDashboard();
-  }
-}
-
-// =========================
-// ONBOARDING TOUR
+// ONBOARDING
 // =========================
 
 const ONBOARDING_KEY = 'wallet2_onboarding_done';
 
 const ONBOARDING_STEPS = [
-  {
-    icon: '👋',
-    title: 'Bienvenido/a',
-    text: 'Esta es tu app personal de inversiones. Aquí puedes ver en tiempo real cómo van tus ahorros, cuánto has invertido y cómo ha evolucionado todo desde el principio.',
-    nav: null
-  },
-  {
-    icon: '📊',
-    title: 'Dashboard',
-    text: 'La pantalla principal. Aquí ves tu valor actual, cuánto has ganado o perdido y tu rentabilidad total. La gráfica muestra cómo ha crecido tu cartera mes a mes.',
-    nav: 'dashboard'
-  },
-  {
-    icon: '💼',
-    title: 'Portfolio',
-    text: 'Aquí ves cada activo que tienes — Bitcoin, Ethereum y el resto. Toca cualquiera para ver el detalle completo: en qué plataforma está, cuánto vale y su historial de precio.',
-    nav: 'portfolio'
-  },
-  {
-    icon: '📋',
-    title: 'Transactions',
-    text: 'Todo el historial de movimientos desde el principio — compras, ventas, staking, transferencias. Puedes ordenar por fecha, tipo de operación o activo.',
-    nav: 'transactions'
-  },
-  {
-    icon: '📈',
-    title: 'Performance',
-    text: 'Aquí ves cómo ha evolucionado tu inversión mes a mes. Muy útil para ver el progreso a lo largo del tiempo y comparar con lo que has puesto.',
-    nav: 'performance'
-  }
+  { icon: '👋', title: 'Bienvenido/a', text: 'Esta es tu app personal de inversiones. Aquí puedes ver en tiempo real cómo van tus ahorros, cuánto has invertido y cómo ha evolucionado todo desde el principio.', nav: null },
+  { icon: '📊', title: 'Dashboard', text: 'La pantalla principal. Aquí ves tu valor actual, cuánto has ganado o perdido y tu rentabilidad total. La gráfica muestra cómo ha crecido tu cartera mes a mes.', nav: 'dashboard' },
+  { icon: '💼', title: 'Portfolio', text: 'Aquí ves cada activo que tienes — Bitcoin, Ethereum y el resto. Toca cualquiera para ver el detalle completo: en qué plataforma está, cuánto vale y su historial de precio.', nav: 'portfolio' },
+  { icon: '📋', title: 'Transactions', text: 'Todo el historial de movimientos desde el principio — compras, ventas, staking, transferencias. Puedes ordenar por fecha, tipo de operación o activo.', nav: 'transactions' },
+  { icon: '📈', title: 'Performance', text: 'Aquí ves cómo ha evolucionado tu inversión mes a mes. Muy útil para ver el progreso a lo largo del tiempo y comparar con lo que has puesto.', nav: 'performance' }
 ];
 
 let onboardingStep = 0;
 
-function restartOnboarding() {
-  try { localStorage.removeItem(ONBOARDING_KEY); } catch(e) {}
-  onboardingStep = 0;
-  renderOnboardingStep();
-}
-  try {
-    return !localStorage.getItem(ONBOARDING_KEY);
-  } catch (e) {
-    return false;
-  }
+function shouldShowOnboarding() {
+  try { return !localStorage.getItem(ONBOARDING_KEY); } catch (e) { return false; }
 }
 
 function markOnboardingDone() {
-  try {
-    localStorage.setItem(ONBOARDING_KEY, '1');
-  } catch (e) {}
+  try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch (e) {}
 }
 
 function showOnboarding() {
@@ -974,16 +662,18 @@ function showOnboarding() {
   renderOnboardingStep();
 }
 
+function restartOnboarding() {
+  try { localStorage.removeItem(ONBOARDING_KEY); } catch (e) {}
+  onboardingStep = 0;
+  renderOnboardingStep();
+}
+
 function renderOnboardingStep() {
-  // Remove existing
   const existing = document.getElementById('onboarding-overlay');
   if (existing) existing.remove();
-
   const step = ONBOARDING_STEPS[onboardingStep];
   const isLast = onboardingStep === ONBOARDING_STEPS.length - 1;
   const isFirst = onboardingStep === 0;
-
-  // Navigate to relevant view
   if (step.nav && step.nav !== STATE.view) {
     STATE.view = step.nav;
     setActiveNav(step.nav);
@@ -991,7 +681,6 @@ function renderOnboardingStep() {
     updateGlobalNavVisibility();
     render();
   }
-
   const overlay = document.createElement('div');
   overlay.id = 'onboarding-overlay';
   overlay.innerHTML = `
@@ -999,37 +688,29 @@ function renderOnboardingStep() {
     <div class="onboarding-card">
       <div class="onboarding-icon">${step.icon}</div>
       <div class="onboarding-step-indicator">
-        ${ONBOARDING_STEPS.map((_, i) => `
-          <div class="onboarding-dot ${i === onboardingStep ? 'active' : i < onboardingStep ? 'done' : ''}"></div>
-        `).join('')}
+        ${ONBOARDING_STEPS.map((_, i) => `<div class="onboarding-dot ${i === onboardingStep ? 'active' : i < onboardingStep ? 'done' : ''}"></div>`).join('')}
       </div>
       <h2 class="onboarding-title">${step.title}</h2>
       <p class="onboarding-text">${step.text}</p>
       <div class="onboarding-actions">
-        ${!isFirst ? `<button class="onboarding-btn-secondary" onclick="onboardingPrev()">Anterior</button>` : `<button class="onboarding-btn-secondary" onclick="skipOnboarding()">Saltar</button>`}
+        ${!isFirst
+          ? `<button class="onboarding-btn-secondary" onclick="onboardingPrev()">Anterior</button>`
+          : `<button class="onboarding-btn-secondary" onclick="skipOnboarding()">Saltar</button>`}
         <button class="onboarding-btn-primary" onclick="${isLast ? 'finishOnboarding()' : 'onboardingNext()'}">
           ${isLast ? '¡Empezar! 🚀' : 'Siguiente →'}
         </button>
       </div>
       <p class="onboarding-counter">${onboardingStep + 1} de ${ONBOARDING_STEPS.length}</p>
-    </div>
-  `;
-
+    </div>`;
   document.body.appendChild(overlay);
 }
 
 function onboardingNext() {
-  if (onboardingStep < ONBOARDING_STEPS.length - 1) {
-    onboardingStep++;
-    renderOnboardingStep();
-  }
+  if (onboardingStep < ONBOARDING_STEPS.length - 1) { onboardingStep++; renderOnboardingStep(); }
 }
 
 function onboardingPrev() {
-  if (onboardingStep > 0) {
-    onboardingStep--;
-    renderOnboardingStep();
-  }
+  if (onboardingStep > 0) { onboardingStep--; renderOnboardingStep(); }
 }
 
 function skipOnboarding() {
@@ -1048,4 +729,25 @@ function finishOnboarding() {
   STATE.view = 'dashboard';
   setActiveNav('dashboard');
   render();
+}
+
+// =========================
+// RENDER
+// =========================
+
+function render() {
+  if (STATE.loading) { renderLoading(); return; }
+  if (STATE.error) { renderError(); return; }
+  if (!STATE.data) { renderLoading(); return; }
+  updateGlobalNavVisibility();
+  updateUserAvatar();
+  switch (STATE.view) {
+    case 'dashboard':    renderDashboard(); break;
+    case 'portfolio':    renderPortfolio(); break;
+    case 'performance':  renderPerformance(); break;
+    case 'global':       renderGlobal(); break;
+    case 'prices':       renderPrices(); break;
+    case 'transactions': renderTransactions(); break;
+    default:             renderDashboard();
+  }
 }
