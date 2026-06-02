@@ -17,6 +17,7 @@ async function boot() {
 
     await loadData();
     updateLastRefresh();
+    showOnboarding();
   } else {
     renderLogin();
   }
@@ -99,6 +100,7 @@ async function handleGoogleLogin(response) {
     updateUserAvatar();
     render();
     updateLastRefresh();
+    showOnboarding();
 
   } catch (err) {
     hideLoadingOverlay();
