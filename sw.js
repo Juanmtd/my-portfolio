@@ -9,8 +9,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Solo cachear recursos estáticos propios
-  if (e.request.url.includes('googleapis') || 
+  if (e.request.url.includes('googleapis') ||
       e.request.url.includes('jsdelivr') ||
       e.request.url.includes('cryptocompare') ||
       e.request.url.includes('script.google.com')) {
