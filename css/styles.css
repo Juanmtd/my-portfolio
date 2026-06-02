@@ -985,3 +985,23 @@ th[data-sort]:hover { color: var(--text); }
   opacity: 0.5;
   margin: 0;
 }
+
+/* Tutorial button */
+#tutorial-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+#tutorial-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
