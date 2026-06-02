@@ -908,3 +908,140 @@ function render() {
     default:             renderDashboard();
   }
 }
+
+// =========================
+// ONBOARDING TOUR
+// =========================
+
+const ONBOARDING_KEY = 'wallet2_onboarding_done';
+
+const ONBOARDING_STEPS = [
+  {
+    icon: '👋',
+    title: 'Bienvenido/a',
+    text: 'Esta es tu app personal de inversiones. Aquí puedes ver en tiempo real cómo van tus ahorros, cuánto has invertido y cómo ha evolucionado todo desde el principio.',
+    nav: null
+  },
+  {
+    icon: '📊',
+    title: 'Dashboard',
+    text: 'La pantalla principal. Aquí ves tu valor actual, cuánto has ganado o perdido y tu rentabilidad total. La gráfica muestra cómo ha crecido tu cartera mes a mes.',
+    nav: 'dashboard'
+  },
+  {
+    icon: '💼',
+    title: 'Portfolio',
+    text: 'Aquí ves cada activo que tienes — Bitcoin, Ethereum y el resto. Toca cualquiera para ver el detalle completo: en qué plataforma está, cuánto vale y su historial de precio.',
+    nav: 'portfolio'
+  },
+  {
+    icon: '📋',
+    title: 'Transactions',
+    text: 'Todo el historial de movimientos desde el principio — compras, ventas, staking, transferencias. Puedes ordenar por fecha, tipo de operación o activo.',
+    nav: 'transactions'
+  },
+  {
+    icon: '📈',
+    title: 'Performance',
+    text: 'Aquí ves cómo ha evolucionado tu inversión mes a mes. Muy útil para ver el progreso a lo largo del tiempo y comparar con lo que has puesto.',
+    nav: 'performance'
+  }
+];
+
+let onboardingStep = 0;
+
+function shouldShowOnboarding() {
+  try {
+    return !localStorage.getItem(ONBOARDING_KEY);
+  } catch (e) {
+    return false;
+  }
+}
+
+function markOnboardingDone() {
+  try {
+    localStorage.setItem(ONBOARDING_KEY, '1');
+  } catch (e) {}
+}
+
+function showOnboarding() {
+  if (!shouldShowOnboarding()) return;
+  onboardingStep = 0;
+  renderOnboardingStep();
+}
+
+function renderOnboardingStep() {
+  // Remove existing
+  const existing = document.getElementById('onboarding-overlay');
+  if (existing) existing.remove();
+
+  const step = ONBOARDING_STEPS[onboardingStep];
+  const isLast = onboardingStep === ONBOARDING_STEPS.length - 1;
+  const isFirst = onboardingStep === 0;
+
+  // Navigate to relevant view
+  if (step.nav && step.nav !== STATE.view) {
+    STATE.view = step.nav;
+    setActiveNav(step.nav);
+    updateOwnerBarVisibility();
+    updateGlobalNavVisibility();
+    render();
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'onboarding-overlay';
+  overlay.innerHTML = `
+    <div class="onboarding-backdrop"></div>
+    <div class="onboarding-card">
+      <div class="onboarding-icon">${step.icon}</div>
+      <div class="onboarding-step-indicator">
+        ${ONBOARDING_STEPS.map((_, i) => `
+          <div class="onboarding-dot ${i === onboardingStep ? 'active' : i < onboardingStep ? 'done' : ''}"></div>
+        `).join('')}
+      </div>
+      <h2 class="onboarding-title">${step.title}</h2>
+      <p class="onboarding-text">${step.text}</p>
+      <div class="onboarding-actions">
+        ${!isFirst ? `<button class="onboarding-btn-secondary" onclick="onboardingPrev()">Anterior</button>` : `<button class="onboarding-btn-secondary" onclick="skipOnboarding()">Saltar</button>`}
+        <button class="onboarding-btn-primary" onclick="${isLast ? 'finishOnboarding()' : 'onboardingNext()'}">
+          ${isLast ? '¡Empezar! 🚀' : 'Siguiente →'}
+        </button>
+      </div>
+      <p class="onboarding-counter">${onboardingStep + 1} de ${ONBOARDING_STEPS.length}</p>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+function onboardingNext() {
+  if (onboardingStep < ONBOARDING_STEPS.length - 1) {
+    onboardingStep++;
+    renderOnboardingStep();
+  }
+}
+
+function onboardingPrev() {
+  if (onboardingStep > 0) {
+    onboardingStep--;
+    renderOnboardingStep();
+  }
+}
+
+function skipOnboarding() {
+  const el = document.getElementById('onboarding-overlay');
+  if (el) el.remove();
+  markOnboardingDone();
+  STATE.view = 'dashboard';
+  setActiveNav('dashboard');
+  render();
+}
+
+function finishOnboarding() {
+  const el = document.getElementById('onboarding-overlay');
+  if (el) el.remove();
+  markOnboardingDone();
+  STATE.view = 'dashboard';
+  setActiveNav('dashboard');
+  render();
+}
